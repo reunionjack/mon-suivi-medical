@@ -10,53 +10,52 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: sans-serif; }
         body { background: var(--bg); color: var(--txt); margin: 0; padding: 10px; line-height: 1.4; }
         
-        .admin-panel { background: var(--c); padding: 15px; border-radius: 12px; border: 1px solid var(--p); margin-bottom: 15px; }
+        /* Style du panneau d'ajout masqué par défaut */
+        .admin-panel { 
+            display: none; /* Masqué au départ */
+            background: var(--c); 
+            padding: 15px; 
+            border-radius: 12px; 
+            border: 1px solid var(--p); 
+            margin-bottom: 15px; 
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .full { grid-column: span 2; }
         
         label { font-size: 0.7rem; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 1rem; }
         
-        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; }
         .blue { background: var(--p); color: white; margin-bottom: 10px; }
         .green { background: var(--s); color: white; margin-top: 10px; }
+        .cancel { background: #475569; color: white; margin-top: 5px; font-size: 0.8rem; padding: 10px; }
         
-        .med-card { background: var(--c); padding: 15px; border-radius: 12px; border-left: 6px solid var(--p); margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .med-card { background: var(--c); padding: 15px; border-radius: 12px; border-left: 6px solid var(--p); margin-bottom: 10px; }
         .row { display: flex; align-items: center; gap: 15px; }
-        input[type="checkbox"] { width: 34px; height: 34px; accent-color: var(--s); cursor: pointer; }
+        input[type="checkbox"] { width: 34px; height: 34px; accent-color: var(--s); }
         .info { flex: 1; }
-        .info strong { display: block; font-size: 1.1rem; }
-        .time-badge { font-size: 0.8rem; background: #38bdf820; color: #38bdf8; padding: 2px 8px; border-radius: 6px; font-weight: bold; }
-        .del-btn { color: #f43f5e; background: none; border: none; font-size: 0.7rem; font-weight: bold; padding: 5px 0; cursor: pointer; }
+        .time-badge { font-size: 0.8rem; background: #38bdf820; color: #38bdf8; padding: 2px 8px; border-radius: 6px; }
+        .del-btn { color: #f43f5e; background: none; border: none; font-size: 0.7rem; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <button id="notifBtn" class="btn blue" onclick="askNotif()">🔔 Activer les Rappels</button>
+    <button id="showAddBtn" class="btn blue" onclick="toggleForm()">+ Ajouter un Médicament</button>
+    <button id="notifBtn" class="btn blue" style="background: #6366f1;" onclick="askNotif()">🔔 Activer les Rappels</button>
     
-    <div class="admin-panel">
+    <div id="adminPanel" class="admin-panel">
         <div class="grid">
-            <div class="full">
-                <label>Date de début du traitement</label>
-                <input type="date" id="startDay">
-            </div>
-            <div class="full">
-                <label>Nom du médicament</label>
-                <input type="text" id="n" placeholder="Ex: Doliprane">
-            </div>
-            <div>
-                <label>Nombre de jours</label>
-                <input type="number" id="d" placeholder="Ex: 5">
-            </div>
-            <div>
-                <label>Heure de prise</label>
-                <input type="time" id="t">
-            </div>
-            <div class="full">
-                <label>Intervalle min. (Optionnel)</label>
-                <input type="number" id="i" placeholder="Ex: 6">
-            </div>
-            <button class="btn green full" onclick="addMed()">Ajouter le Médicament</button>
+            <div class="full"><label>Date de début</label><input type="date" id="startDay"></div>
+            <div class="full"><label>Nom du médicament</label><input type="text" id="n" placeholder="Ex: Doliprane"></div>
+            <div><label>Nb de jours</label><input type="number" id="d"></div>
+            <div><label>Heure de prise</label><input type="time" id="t"></div>
+            <div class="full"><label>Intervalle min. (Optionnel)</label><input type="number" id="i" placeholder="Ex: 6"></div>
+            <button class="btn green full" onclick="addMed()">Enregistrer</button>
+            <button class="btn cancel full" onclick="toggleForm()">Annuler / Fermer</button>
         </div>
     </div>
 
@@ -65,43 +64,34 @@
 <script>
     if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 
-    // Base de données de sécurité automatique
-    const SAFETY_DB = {
-        "doliprane": 6, "paracetamol": 6, "ketoprofene": 12, 
-        "bi-profenid": 12, "nocertone": 24, "relpax": 4, 
-        "ibuprofene": 6, "advil": 6
-    };
-
+    const SAFETY_DB = { "doliprane": 6, "paracetamol": 6, "ketoprofene": 12, "ibuprofene": 6 };
     let meds = JSON.parse(localStorage.getItem('meds_v3') || "[]");
 
-    function askNotif() {
-        Notification.requestPermission().then(p => { 
-            if(p === 'granted') {
-                document.getElementById('notifBtn').style.display = 'none';
-                alert("Rappels activés !");
-            }
-        });
+    // Fonction pour afficher/masquer le formulaire
+    function toggleForm() {
+        const panel = document.getElementById('adminPanel');
+        const mainBtn = document.getElementById('showAddBtn');
+        if (panel.style.display === 'block') {
+            panel.style.display = 'none';
+            mainBtn.style.display = 'block';
+        } else {
+            panel.style.display = 'block';
+            mainBtn.style.display = 'none';
+            // Définit la date du jour par défaut
+            document.getElementById('startDay').value = new Date().toISOString().split('T')[0];
+        }
     }
 
-    if (Notification.permission === 'granted') document.getElementById('notifBtn').style.display = 'none';
+    function askNotif() {
+        Notification.requestPermission().then(p => { if(p === 'granted') alert("Notifications activées !"); });
+    }
 
     function addMed() {
         const name = document.getElementById('n').value;
         const intervalInput = document.getElementById('i').value;
-        const start = document.getElementById('startDay').value;
+        let finalInterval = intervalInput || 4;
         
-        let finalInterval = intervalInput;
-        const searchName = name.toLowerCase().trim();
-        
-        if (SAFETY_DB[searchName]) {
-            finalInterval = SAFETY_DB[searchName];
-            alert(`Sécurité : Intervalle pour ${name} réglé à ${finalInterval}h.`);
-        } else if (!finalInterval || finalInterval < 4) {
-            finalInterval = 4;
-            alert("Intervalle inconnu : réglé à 4h par défaut.");
-        }
-
-        if(!name || !document.getElementById('t').value || !start) return alert("Remplissez tous les champs.");
+        if (SAFETY_DB[name.toLowerCase().trim()]) finalInterval = SAFETY_DB[name.toLowerCase().trim()];
 
         const med = {
             id: Date.now(),
@@ -109,11 +99,13 @@
             d: parseInt(document.getElementById('d').value),
             t: document.getElementById('t').value,
             i: parseInt(finalInterval),
-            start: start
+            start: document.getElementById('startDay').value
         };
 
+        if(!med.n || !med.t) return alert("Remplissez le nom et l'heure");
         meds.push(med);
         localStorage.setItem('meds_v3', JSON.stringify(meds));
+        toggleForm(); // Referme le formulaire après l'ajout
         render();
     }
 
@@ -133,12 +125,7 @@
             localStorage.setItem(`last_${id}`, now);
             if(Notification.permission === 'granted') {
                 navigator.serviceWorker.ready.then(reg => {
-                    reg.active.postMessage({
-                        type: 'SCHEDULE_NOTIF',
-                        title: `💊 Rappel : ${medName}`,
-                        body: `C'est l'heure de votre prise habituelle de ${medName}.`,
-                        delay: 24 * 3600000 
-                    });
+                    reg.active.postMessage({ type: 'SCHEDULE_NOTIF', title: medName, body: `C'est l'heure de votre prise !`, delay: 24 * 3600000 });
                 });
             }
         }
@@ -147,11 +134,7 @@
     }
 
     function deleteMed(id) {
-        if(confirm("Supprimer ce médicament ?")) {
-            meds = meds.filter(m => m.id !== id);
-            localStorage.setItem('meds_v3', JSON.stringify(meds));
-            render();
-        }
+        if(confirm("Supprimer ?")) { meds = meds.filter(m => m.id !== id); localStorage.setItem('meds_v3', JSON.stringify(meds)); render(); }
     }
 
     function render() {
@@ -166,10 +149,8 @@
                         <input type="checkbox" ${isChecked} onchange="toggle(${m.id}, '${m.n}', ${m.i})">
                         <div class="info">
                             <strong>${m.n} <span class="time-badge">${m.t}</span></strong>
-                            <div style="font-size:0.75rem; opacity:0.7; margin-top:4px;">
-                                Sécurité : ${m.i}h | Durée : ${m.d} jours
-                            </div>
-                            <button class="del-btn" onclick="deleteMed(${m.id})">SUPPRIMER</button>
+                            <div style="font-size:0.7rem; opacity:0.6">Intervalle : ${m.i}h | Durée : ${m.d}j</div>
+                            <button class="del-btn" onclick="deleteMed(${m.id})">Supprimer</button>
                         </div>
                     </div>
                 </div>`;
