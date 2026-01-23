@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0284c7">
+    <style>
+        :root { --p: #0284c7; --s: #10b981; --bg: #0f172a; --c: #1e293b; --txt: #f1f5f9; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: sans-serif; }
+        body { background: var(--bg); color: var(--txt); margin: 0; padding: 10px; line-height: 1.4; }
+        
+        .admin-panel { background: var(--c); padding: 15px; border-radius: 12px; border: 1px solid var(--p); margin-bottom: 15px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .full { grid-column: span 2; }
+        
+        label { font-size: 0.7rem; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 1rem; }
+        
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .blue { background: var(--p); color: white; margin-bottom: 10px; }
+        .green { background: var(--s); color: white; margin-top: 10px; }
+        
+        .med-card { background: var(--c); padding: 15px; border-radius: 12px; border-left: 6px solid var(--p); margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .row { display: flex; align-items: center; gap: 15px; }
+        input[type="checkbox"] { width: 34px; height: 34px; accent-color: var(--s); cursor: pointer; }
+        .info { flex: 1; }
+        .info strong { display: block; font-size: 1.1rem; }
+        .time-badge { font-size: 0.8rem; background: #38bdf820; color: #38bdf8; padding: 2px 8px; border-radius: 6px; font-weight: bold; }
+        .del-btn { color: #f43f5e; background: none; border: none; font-size: 0.7rem; font-weight: bold; padding: 5px 0; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <button id="notifBtn" class="btn blue" onclick="askNotif()">🔔 Activer les Rappels</button>
+    
+    <div class="admin-panel">
+        <div class="grid">
+            <div class="full">
+                <label>Date de début du traitement</label>
+                <input type="date" id="startDay">
+            </div>
+            <div class="full">
+                <label>Nom du médicament</label>
+                <input type="text" id="n" placeholder="Ex: Doliprane">
+            </div>
+            <div>
+                <label>Nombre de jours</label>
+                <input type="number" id="d" placeholder="Ex: 5">
+            </div>
+            <div>
+                <label>Heure de prise</label>
+                <input type="time" id="t">
+            </div>
+            <div class="full">
+                <label>Intervalle min. (Optionnel)</label>
+                <input type="number" id="i" placeholder="Ex: 6">
+            </div>
+            <button class="btn green full" onclick="addMed()">Ajouter le Médicament</button>
+        </div>
+    </div>
+
+    <div id="list"></div>
+
+<script>
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+
+    // Base de données de sécurité automatique
+    const SAFETY_DB = {
+        "doliprane": 6, "paracetamol": 6, "ketoprofene": 12, 
+        "bi-profenid": 12, "nocertone": 24, "relpax": 4, 
+        "ibuprofene": 6, "advil": 6
+    };
+
+    let meds = JSON.parse(localStorage.getItem('meds_v3') || "[]");
+
+    function askNotif() {
+        Notification.requestPermission().then(p => { 
+            if(p === 'granted') {
+                document.getElementById('notifBtn').style.display = 'none';
+                alert("Rappels activés !");
+            }
+        });
+    }
+
+    if (Notification.permission === 'granted') document.getElementById('notifBtn').style.display = 'none';
+
+    function addMed() {
+        const name = document.getElementById('n').value;
+        const intervalInput = document.getElementById('i').value;
+        const start = document.getElementById('startDay').value;
+        
+        let finalInterval = intervalInput;
+        const searchName = name.toLowerCase().trim();
+        
+        if (SAFETY_DB[searchName]) {
+            finalInterval = SAFETY_DB[searchName];
+            alert(`Sécurité : Intervalle pour ${name} réglé à ${finalInterval}h.`);
+        } else if (!finalInterval || finalInterval < 4) {
+            finalInterval = 4;
+            alert("Intervalle inconnu : réglé à 4h par défaut.");
+        }
+
+        if(!name || !document.getElementById('t').value || !start) return alert("Remplissez tous les champs.");
+
+        const med = {
+            id: Date.now(),
+            n: name,
+            d: parseInt(document.getElementById('d').value),
+            t: document.getElementById('t').value,
+            i: parseInt(finalInterval),
+            start: start
+        };
+
+        meds.push(med);
+        localStorage.setItem('meds_v3', JSON.stringify(meds));
+        render();
+    }
+
+    function toggle(id, medName, intervalHours) {
+        let hist = JSON.parse(localStorage.getItem('hist_v3') || "{}");
+        const now = Date.now();
+        const lastTaken = localStorage.getItem(`last_${id}`);
+
+        if (!hist[id] && lastTaken && (now - lastTaken) < (intervalHours * 3600000)) {
+            const wait = (intervalHours - (now - lastTaken)/3600000).toFixed(1);
+            alert(`⚠️ Intervalle non respecté ! Attendez encore ${wait}h.`);
+            render(); return;
+        }
+
+        hist[id] = !hist[id];
+        if(hist[id]) {
+            localStorage.setItem(`last_${id}`, now);
+            if(Notification.permission === 'granted') {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.active.postMessage({
+                        type: 'SCHEDULE_NOTIF',
+                        title: `💊 Rappel : ${medName}`,
+                        body: `C'est l'heure de votre prise habituelle de ${medName}.`,
+                        delay: 24 * 3600000 
+                    });
+                });
+            }
+        }
+        localStorage.setItem('hist_v3', JSON.stringify(hist));
+        render();
+    }
+
+    function deleteMed(id) {
+        if(confirm("Supprimer ce médicament ?")) {
+            meds = meds.filter(m => m.id !== id);
+            localStorage.setItem('meds_v3', JSON.stringify(meds));
+            render();
+        }
+    }
+
+    function render() {
+        const list = document.getElementById('list');
+        const hist = JSON.parse(localStorage.getItem('hist_v3') || "{}");
+        list.innerHTML = "";
+        meds.forEach(m => {
+            const isChecked = hist[m.id] ? 'checked' : '';
+            list.innerHTML += `
+                <div class="med-card">
+                    <div class="row">
+                        <input type="checkbox" ${isChecked} onchange="toggle(${m.id}, '${m.n}', ${m.i})">
+                        <div class="info">
+                            <strong>${m.n} <span class="time-badge">${m.t}</span></strong>
+                            <div style="font-size:0.75rem; opacity:0.7; margin-top:4px;">
+                                Sécurité : ${m.i}h | Durée : ${m.d} jours
+                            </div>
+                            <button class="del-btn" onclick="deleteMed(${m.id})">SUPPRIMER</button>
+                        </div>
+                    </div>
+                </div>`;
+        });
+    }
+    render();
+</script>
+</body>
+</html>
