@@ -10,150 +10,96 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: sans-serif; }
         body { background: var(--bg); color: var(--txt); margin: 0; padding: 10px; line-height: 1.4; }
         
-        /* Style du panneau d'ajout masqué par défaut */
+        /* Ce bouton est le seul visible au départ */
+        #showAddBtn { margin-bottom: 20px; }
+
+        /* Le panneau est masqué par défaut */
         .admin-panel { 
-            display: none; /* Masqué au départ */
+            display: none; 
             background: var(--c); 
             padding: 15px; 
             border-radius: 12px; 
             border: 1px solid var(--p); 
             margin-bottom: 15px; 
-            animation: fadeIn 0.3s ease;
         }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .full { grid-column: span 2; }
-        
         label { font-size: 0.7rem; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 1rem; }
         
         .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; }
-        .blue { background: var(--p); color: white; margin-bottom: 10px; }
+        .blue { background: var(--p); color: white; }
         .green { background: var(--s); color: white; margin-top: 10px; }
         .cancel { background: #475569; color: white; margin-top: 5px; font-size: 0.8rem; padding: 10px; }
-        
+
         .med-card { background: var(--c); padding: 15px; border-radius: 12px; border-left: 6px solid var(--p); margin-bottom: 10px; }
-        .row { display: flex; align-items: center; gap: 15px; }
-        input[type="checkbox"] { width: 34px; height: 34px; accent-color: var(--s); }
-        .info { flex: 1; }
-        .time-badge { font-size: 0.8rem; background: #38bdf820; color: #38bdf8; padding: 2px 8px; border-radius: 6px; }
-        .del-btn { color: #f43f5e; background: none; border: none; font-size: 0.7rem; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <button id="showAddBtn" class="btn blue" onclick="toggleForm()">+ Ajouter un Médicament</button>
-    <button id="notifBtn" class="btn blue" style="background: #6366f1;" onclick="askNotif()">🔔 Activer les Rappels</button>
-    
+    <button id="showAddBtn" class="btn blue" onclick="toggleForm()">+ AJOUTER UN MÉDICAMENT</button>
+
     <div id="adminPanel" class="admin-panel">
         <div class="grid">
-            <div class="full"><label>Date de début</label><input type="date" id="startDay"></div>
+            <div class="full"><label>Date de début du traitement</label><input type="date" id="startDay"></div>
             <div class="full"><label>Nom du médicament</label><input type="text" id="n" placeholder="Ex: Doliprane"></div>
-            <div><label>Nb de jours</label><input type="number" id="d"></div>
+            <div><label>Nombre de jours</label><input type="number" id="d" placeholder="Ex: 5"></div>
             <div><label>Heure de prise</label><input type="time" id="t"></div>
             <div class="full"><label>Intervalle min. (Optionnel)</label><input type="number" id="i" placeholder="Ex: 6"></div>
-            <button class="btn green full" onclick="addMed()">Enregistrer</button>
-            <button class="btn cancel full" onclick="toggleForm()">Annuler / Fermer</button>
+            
+            <button class="btn green full" onclick="addMed()">AJOUTER LE MÉDICAMENT</button>
+            <button class="btn cancel full" onclick="toggleForm()">ANNULER / FERMER</button>
         </div>
     </div>
 
     <div id="list"></div>
 
 <script>
+    // Enregistrement du Service Worker
     if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 
-    const SAFETY_DB = { "doliprane": 6, "paracetamol": 6, "ketoprofene": 12, "ibuprofene": 6 };
     let meds = JSON.parse(localStorage.getItem('meds_v3') || "[]");
 
-    // Fonction pour afficher/masquer le formulaire
+    // Fonction pour afficher ou masquer le formulaire
     function toggleForm() {
         const panel = document.getElementById('adminPanel');
-        const mainBtn = document.getElementById('showAddBtn');
+        const btn = document.getElementById('showAddBtn');
         if (panel.style.display === 'block') {
             panel.style.display = 'none';
-            mainBtn.style.display = 'block';
+            btn.style.display = 'block';
         } else {
             panel.style.display = 'block';
-            mainBtn.style.display = 'none';
-            // Définit la date du jour par défaut
+            btn.style.display = 'none';
             document.getElementById('startDay').value = new Date().toISOString().split('T')[0];
         }
     }
 
-    function askNotif() {
-        Notification.requestPermission().then(p => { if(p === 'granted') alert("Notifications activées !"); });
-    }
-
     function addMed() {
         const name = document.getElementById('n').value;
-        const intervalInput = document.getElementById('i').value;
-        let finalInterval = intervalInput || 4;
-        
-        if (SAFETY_DB[name.toLowerCase().trim()]) finalInterval = SAFETY_DB[name.toLowerCase().trim()];
+        const time = document.getElementById('t').value;
+        if(!name || !time) return alert("Remplissez au moins le nom et l'heure.");
 
         const med = {
             id: Date.now(),
             n: name,
-            d: parseInt(document.getElementById('d').value),
-            t: document.getElementById('t').value,
-            i: parseInt(finalInterval),
+            d: document.getElementById('d').value,
+            t: time,
+            i: document.getElementById('i').value || 4,
             start: document.getElementById('startDay').value
         };
 
-        if(!med.n || !med.t) return alert("Remplissez le nom et l'heure");
         meds.push(med);
         localStorage.setItem('meds_v3', JSON.stringify(meds));
-        toggleForm(); // Referme le formulaire après l'ajout
+        toggleForm(); // Referme le panneau après l'ajout
         render();
-    }
-
-    function toggle(id, medName, intervalHours) {
-        let hist = JSON.parse(localStorage.getItem('hist_v3') || "{}");
-        const now = Date.now();
-        const lastTaken = localStorage.getItem(`last_${id}`);
-
-        if (!hist[id] && lastTaken && (now - lastTaken) < (intervalHours * 3600000)) {
-            const wait = (intervalHours - (now - lastTaken)/3600000).toFixed(1);
-            alert(`⚠️ Intervalle non respecté ! Attendez encore ${wait}h.`);
-            render(); return;
-        }
-
-        hist[id] = !hist[id];
-        if(hist[id]) {
-            localStorage.setItem(`last_${id}`, now);
-            if(Notification.permission === 'granted') {
-                navigator.serviceWorker.ready.then(reg => {
-                    reg.active.postMessage({ type: 'SCHEDULE_NOTIF', title: medName, body: `C'est l'heure de votre prise !`, delay: 24 * 3600000 });
-                });
-            }
-        }
-        localStorage.setItem('hist_v3', JSON.stringify(hist));
-        render();
-    }
-
-    function deleteMed(id) {
-        if(confirm("Supprimer ?")) { meds = meds.filter(m => m.id !== id); localStorage.setItem('meds_v3', JSON.stringify(meds)); render(); }
     }
 
     function render() {
         const list = document.getElementById('list');
-        const hist = JSON.parse(localStorage.getItem('hist_v3') || "{}");
         list.innerHTML = "";
         meds.forEach(m => {
-            const isChecked = hist[m.id] ? 'checked' : '';
-            list.innerHTML += `
-                <div class="med-card">
-                    <div class="row">
-                        <input type="checkbox" ${isChecked} onchange="toggle(${m.id}, '${m.n}', ${m.i})">
-                        <div class="info">
-                            <strong>${m.n} <span class="time-badge">${m.t}</span></strong>
-                            <div style="font-size:0.7rem; opacity:0.6">Intervalle : ${m.i}h | Durée : ${m.d}j</div>
-                            <button class="del-btn" onclick="deleteMed(${m.id})">Supprimer</button>
-                        </div>
-                    </div>
-                </div>`;
+            list.innerHTML += `<div class="med-card"><strong>${m.n}</strong> - ${m.t}</div>`;
         });
     }
     render();
