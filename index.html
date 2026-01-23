@@ -19,11 +19,8 @@
         .bg-gold { background: var(--gold); color: #000; }
         .date-nav { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; background: var(--c); padding: 12px; border-radius: 50px; border: 1px solid #334155; }
         .date-nav button { background: #334155; border: none; color: #38bdf8; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; }
-        
-        /* ANIMATION DE SURVOL RETABLIE ICI */
         .med-card { background: var(--c); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 8px solid #475569; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: all 0.2s ease; }
         .med-card:hover { background: #2d3748; transform: translateX(5px); }
-        
         .brd-matin { border-left-color: var(--gold); }
         .brd-midi { border-left-color: #38bdf8; }
         .brd-soir { border-left-color: #f97316; }
@@ -71,6 +68,10 @@
     <div id="adminPanel" class="admin-panel">
         <input type="hidden" id="editGroupId">
         <div class="input-group"><label>Nom du médicament</label><input type="text" id="name"></div>
+        <div id="classicFields">
+            <div class="input-group"><label>Date début</label><input type="date" id="startDay"></div>
+            <div class="input-group"><label>Durée (jours)</label><input type="number" id="jours" value="30"></div>
+        </div>
         <div class="input-group">
             <label>Moments de prise</label>
             <div class="period-selector">
@@ -80,10 +81,6 @@
                 <button class="p-btn" data-p="Coucher" onclick="toggleP(this)">Couch.</button>
                 <button class="p-btn" data-p="Crise" onclick="toggleP(this, true)">🚨 Crise</button>
             </div>
-        </div>
-        <div id="classicFields">
-            <div class="input-group"><label>Date début</label><input type="date" id="startDay"></div>
-            <div class="input-group"><label>Durée (jours)</label><input type="number" id="jours" value="30"></div>
         </div>
         <div class="input-group"><label>Intervalle (h)</label><input type="number" id="inter" value="4"></div>
         <button class="btn-top bg-blue" style="width:100%; height:50px" onclick="saveMed()">ENREGISTRER</button>
@@ -99,11 +96,26 @@
 
     function resetApp() { if(confirm("Tout effacer ?")) { localStorage.clear(); location.reload(); } }
     
+    // FONCTION TEST RENFORCÉE POUR MOBILE
     function sendTestNotif() {
-        if (!("Notification" in window)) return alert("Non supporté");
-        Notification.requestPermission().then(p => {
-            if (p === "granted") new Notification("Test Réussi ! ✅", { body: "Les alertes fonctionnent." });
-            else alert("Vérifiez l'interrupteur BLEU Android");
+        if (navigator.vibrate) navigator.vibrate(200); // Fait vibrer pour prouver que le bouton marche
+        
+        if (!("Notification" in window)) return alert("Navigateur non compatible notifications");
+
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                try {
+                    const n = new Notification("Ma Pharmacie ✅", { 
+                        body: "Si vous voyez ceci, c'est que ça fonctionne !",
+                        icon: "https://cdn-icons-png.flaticon.com/512/822/822143.png"
+                    });
+                    alert("Notification envoyée ! Si rien ne s'affiche en haut, quittez Opera et revenez.");
+                } catch (e) {
+                    alert("Android bloque l'affichage direct. Solution : utilisez le bouton Agenda .ICS");
+                }
+            } else {
+                alert("Permission refusée par le téléphone (" + permission + "). Vérifiez les réglages Android.");
+            }
         });
     }
 
