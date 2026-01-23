@@ -3,105 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0284c7">
+    <title>Suivi Médicaments</title>
     <style>
         :root { --p: #0284c7; --s: #10b981; --bg: #0f172a; --c: #1e293b; --txt: #f1f5f9; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: sans-serif; }
-        body { background: var(--bg); color: var(--txt); margin: 0; padding: 10px; line-height: 1.4; }
+        * { box-sizing: border-box; font-family: system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--txt); margin: 0; padding: 10px; }
         
-        /* Ce bouton est le seul visible au départ */
-        #showAddBtn { margin-bottom: 20px; }
+        /* Navigation */
+        .date-nav { display: flex; align-items: center; justify-content: center; gap: 20px; margin: 10px 0; background: var(--c); padding: 12px; border-radius: 50px; }
+        .date-nav button { background: #334155; border: none; color: #38bdf8; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; }
 
-        /* Le panneau est masqué par défaut */
-        .admin-panel { 
-            display: none; 
-            background: var(--c); 
-            padding: 15px; 
-            border-radius: 12px; 
-            border: 1px solid var(--p); 
-            margin-bottom: 15px; 
-        }
-
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .full { grid-column: span 2; }
-        label { font-size: 0.7rem; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 4px; text-transform: uppercase; }
-        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 1rem; }
+        /* Formulaire */
+        .admin-panel { display: none; background: var(--c); padding: 20px; border-radius: 12px; border: 2px solid var(--p); margin-bottom: 15px; }
         
-        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; }
+        /* Styles des champs */
+        .input-group { margin-bottom: 15px; width: 100%; }
+        label { font-size: 0.75rem; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 1rem; outline: none; transition: border-color 0.2s; }
+        input:focus { border-color: var(--p); }
+        
+        /* Sélecteur Période */
+        .period-selector { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+        .p-btn { flex: 1; padding: 12px 5px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; cursor: pointer; font-size: 0.75rem; transition: all 0.2s; }
+        
+        /* Couleurs actives */
+        .act-Matin { background: #eab308 !important; color: #000 !important; font-weight: bold; border-color: #eab308; }
+        .act-Midi { background: #38bdf8 !important; color: #000 !important; font-weight: bold; border-color: #38bdf8; }
+        .act-Soir { background: #f97316 !important; color: #fff !important; font-weight: bold; border-color: #f97316; }
+        .act-Coucher { background: #6366f1 !important; color: #fff !important; font-weight: bold; border-color: #6366f1; }
+        .act-Crise { background: #f43f5e !important; color: #fff !important; font-weight: bold; border-color: #f43f5e; }
+
+        /* Boutons Actions */
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; margin-top: 5px; letter-spacing: 1px; }
         .blue { background: var(--p); color: white; }
-        .green { background: var(--s); color: white; margin-top: 10px; }
-        .cancel { background: #475569; color: white; margin-top: 5px; font-size: 0.8rem; padding: 10px; }
+        .green { background: var(--s); color: white; }
+        .grey { background: #475569; color: #cbd5e1; }
 
-        .med-card { background: var(--c); padding: 15px; border-radius: 12px; border-left: 6px solid var(--p); margin-bottom: 10px; }
+        /* Liste Médicaments */
+        .med-card { background: var(--c); padding: 12px 15px; border-radius: 12px; margin-bottom: 10px; border-left: 8px solid #475569; display: flex; align-items: center; justify-content: space-between; gap: 15px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .brd-matin { border-left-color: #eab308; }
+        .brd-midi { border-left-color: #38bdf8; }
+        .brd-soir { border-left-color: #f97316; }
+        .brd-coucher { border-left-color: #6366f1; }
+        .brd-crise { border-left-color: #f43f5e; }
+
+        .chk { width: 28px; height: 28px; min-width: 28px; accent-color: var(--s); cursor: pointer; }
+        
+        .med-info { flex: 1; display: flex; flex-direction: column; }
+        .med-name { 
+            font-weight: 700; font-size: 1.05rem; color: white; cursor: pointer; 
+            text-decoration: underline dotted #38bdf8; text-underline-offset: 3px;
+            transition: color 0.2s;
+        }
+        .med-name:hover { color: #eab308; text-decoration-style: solid; }
+        .med-meta { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
+
+        .med-side { text-align: right; min-width: 80px; display: flex; flex-direction: column; align-items: flex-end; }
+        .del-btn { color: #f43f5e; background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 5px 0 0 0; opacity: 0.8; }
     </style>
 </head>
 <body>
 
-    <button id="showAddBtn" class="btn blue" onclick="toggleForm()">+ AJOUTER UN MÉDICAMENT</button>
+    <div class="date-nav">
+        <button onclick="changeDate(-1)">❮</button>
+        <b id="dateDisplay" style="color:#38bdf8">Aujourd'hui</b>
+        <button onclick="changeDate(1)">❯</button>
+    </div>
 
+    <button class="btn blue" onclick="openForm()">+ Nouveau Traitement</button>
+    
     <div id="adminPanel" class="admin-panel">
-        <div class="grid">
-            <div class="full"><label>Date de début du traitement</label><input type="date" id="startDay"></div>
-            <div class="full"><label>Nom du médicament</label><input type="text" id="n" placeholder="Ex: Doliprane"></div>
-            <div><label>Nombre de jours</label><input type="number" id="d" placeholder="Ex: 5"></div>
-            <div><label>Heure de prise</label><input type="time" id="t"></div>
-            <div class="full"><label>Intervalle min. (Optionnel)</label><input type="number" id="i" placeholder="Ex: 6"></div>
-            
-            <button class="btn green full" onclick="addMed()">AJOUTER LE MÉDICAMENT</button>
-            <button class="btn cancel full" onclick="toggleForm()">ANNULER / FERMER</button>
+        <input type="hidden" id="editGroupId">
+        
+        <div class="input-group">
+            <label>Nom du médicament</label>
+            <input type="text" id="name" placeholder="Ex: Ventoline, Doliprane...">
         </div>
+        
+        <div class="input-group">
+            <label>Moment de la prise</label>
+            <div class="period-selector">
+                <button class="p-btn" data-p="Matin" onclick="toggleP(this)">Matin</button>
+                <button class="p-btn" data-p="Midi" onclick="toggleP(this)">Midi</button>
+                <button class="p-btn" data-p="Soir" onclick="toggleP(this)">Soir</button>
+                <button class="p-btn" data-p="Coucher" onclick="toggleP(this)">Couch.</button>
+                <button class="p-btn" data-p="Crise" onclick="toggleP(this, true)">🚨 CRISE</button>
+            </div>
+        </div>
+
+        <div id="classicFields">
+            <div class="input-group">
+                <label>Date de début</label>
+                <input type="date" id="startDay">
+            </div>
+            <div class="input-group">
+                <label>Durée du traitement (Jours)</label>
+                <input type="number" id="jours" value="5">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Intervalle minimum (Heures)</label>
+            <input type="number" id="inter" value="4">
+        </div>
+        
+        <button class="btn green" onclick="saveMed()">Enregistrer</button>
+        <button class="btn grey" onclick="document.getElementById('adminPanel').style.display='none'">Annuler</button>
     </div>
 
     <div id="list"></div>
 
 <script>
-    // Enregistrement du Service Worker
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+    let curD = new Date(); curD.setHours(0,0,0,0);
+    // Nouvelle version v13 pour structure propre
+    let meds = JSON.parse(localStorage.getItem('meds_v13') || "[]");
+    let hist = JSON.parse(localStorage.getItem('hist_v13') || "{}");
 
-    let meds = JSON.parse(localStorage.getItem('meds_v3') || "[]");
+    function changeDate(n) { curD.setDate(curD.getDate() + n); render(); }
 
-    // Fonction pour afficher ou masquer le formulaire
-    function toggleForm() {
-        const panel = document.getElementById('adminPanel');
-        const btn = document.getElementById('showAddBtn');
-        if (panel.style.display === 'block') {
-            panel.style.display = 'none';
-            btn.style.display = 'block';
+    function toggleP(btn, isCrise) {
+        if(isCrise) {
+            document.querySelectorAll('.p-btn').forEach(b => b.className = 'p-btn');
+            btn.classList.add('act-Crise');
+            document.getElementById('classicFields').style.display = 'none'; 
         } else {
-            panel.style.display = 'block';
-            btn.style.display = 'none';
-            document.getElementById('startDay').value = new Date().toISOString().split('T')[0];
+            document.querySelector('[data-p="Crise"]').className = 'p-btn';
+            btn.classList.toggle('act-' + btn.dataset.p);
+            const hasClassic = document.querySelectorAll('.p-btn[class*="act-"]:not(.act-Crise)').length > 0;
+            document.getElementById('classicFields').style.display = hasClassic ? 'block' : 'none';
         }
     }
 
-    function addMed() {
-        const name = document.getElementById('n').value;
-        const time = document.getElementById('t').value;
-        if(!name || !time) return alert("Remplissez au moins le nom et l'heure.");
+    function openForm() {
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('editGroupId').value = "";
+        document.getElementById('name').value = "";
+        document.getElementById('startDay').value = new Date().toISOString().split('T')[0];
+        document.getElementById('inter').value = "4";
+        document.getElementById('jours').value = "5";
+        document.querySelectorAll('.p-btn').forEach(b => b.className = 'p-btn');
+        document.getElementById('classicFields').style.display = 'block';
+    }
 
-        const med = {
-            id: Date.now(),
-            n: name,
-            d: document.getElementById('d').value,
-            t: time,
-            i: document.getElementById('i').value || 4,
-            start: document.getElementById('startDay').value
-        };
+    function editGroup(gid) {
+        const group = meds.filter(m => m.gid === gid);
+        if(!group.length) return;
+        
+        openForm();
+        document.getElementById('editGroupId').value = gid;
+        document.getElementById('name').value = group[0].n;
+        document.getElementById('inter').value = group[0].i;
+        
+        const isCrise = group[0].p === 'Crise';
+        
+        if(!isCrise) {
+            document.getElementById('startDay').value = group[0].s;
+            document.getElementById('jours').value = group[0].d;
+        }
 
-        meds.push(med);
-        localStorage.setItem('meds_v3', JSON.stringify(meds));
-        toggleForm(); // Referme le panneau après l'ajout
+        group.forEach(m => {
+            const btn = document.querySelector(`[data-p="${m.p}"]`);
+            if(btn) {
+                if(m.p === 'Crise') toggleP(btn, true);
+                else btn.classList.add('act-' + m.p);
+            }
+        });
+
+        document.getElementById('classicFields').style.display = isCrise ? 'none' : 'block';
+    }
+
+    function saveMed() {
+        const name = document.getElementById('name').value;
+        const editId = document.getElementById('editGroupId').value;
+        const isCrise = document.querySelector('.act-Crise');
+        const selected = document.querySelectorAll('.p-btn[class*="act-"]');
+
+        if(!name) return alert("Le nom est obligatoire.");
+        if(selected.length === 0) return alert("Sélectionnez au moins un moment ou Crise.");
+
+        if(editId) meds = meds.filter(m => m.gid !== parseFloat(editId));
+        const gid = editId ? parseFloat(editId) : Date.now();
+
+        selected.forEach(btn => {
+            const p = btn.dataset.p;
+            meds.push({
+                id: Date.now() + Math.random(),
+                gid: gid,
+                n: name, p: p,
+                s: (p === 'Crise') ? "2000-01-01" : document.getElementById('startDay').value,
+                d: (p === 'Crise') ? 9999 : (parseInt(document.getElementById('jours').value) || 1),
+                i: parseInt(document.getElementById('inter').value) || 0,
+                t: (p === 'Crise') ? "Si besoin" : (p==='Matin'?'08:00':p==='Midi'?'12:00':p==='Soir'?'19:00':'22:00')
+            });
+        });
+
+        localStorage.setItem('meds_v13', JSON.stringify(meds));
+        document.getElementById('adminPanel').style.display = 'none';
+        render();
+    }
+
+    function toggleCheck(id, isCrise) {
+        const k = curD.toISOString().split('T')[0];
+        if(!hist[k]) hist[k] = {};
+        
+        if(hist[k][id]) {
+            delete hist[k][id];
+        } else {
+            const now = new Date();
+            hist[k][id] = isCrise ? now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : true;
+        }
+        localStorage.setItem('hist_v13', JSON.stringify(hist));
         render();
     }
 
     function render() {
+        const k = curD.toISOString().split('T')[0];
+        document.getElementById('dateDisplay').innerText = (k === new Date().toISOString().split('T')[0]) ? "Aujourd'hui" : curD.toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
         const list = document.getElementById('list');
         list.innerHTML = "";
+
+        meds.sort((a,b) => {
+            if(a.p === 'Crise') return 1;
+            if(b.p === 'Crise') return -1;
+            return a.t.localeCompare(b.t);
+        });
+
         meds.forEach(m => {
-            list.innerHTML += `<div class="med-card"><strong>${m.n}</strong> - ${m.t}</div>`;
+            const start = new Date(m.s); start.setHours(0,0,0,0);
+            const diff = Math.round((curD - start) / 86400000);
+            const rest = m.d - diff;
+            
+            if(m.p !== 'Crise' && (diff < 0 || rest <= 0)) return;
+
+            const val = (hist[k] && hist[k][m.id]);
+            const isChecked = val ? 'checked' : '';
+            
+            let statusDisplay = "";
+            if (m.p === 'Crise') {
+                statusDisplay = val ? `Pris à ${val}` : `Interv: ${m.i}h`;
+            } else {
+                statusDisplay = rest + ' j. rest.';
+            }
+
+            const icon = m.p==='Matin'?'☀️':m.p==='Midi'?'🕛':m.p==='Soir'?'🌙':m.p==='Coucher'?'🛌':'🚨';
+            const colorClass = 'brd-' + m.p.toLowerCase();
+
+            list.innerHTML += `
+                <div class="med-card ${colorClass}">
+                    <input type="checkbox" class="chk" ${isChecked} onchange="toggleCheck(${m.id}, ${m.p === 'Crise'})">
+                    <div class="med-info">
+                        <div class="med-name" onclick="editGroup(${m.gid})">${m.n}</div>
+                        <div class="med-meta">${icon} ${m.p} • ${m.t}</div>
+                    </div>
+                    <div class="med-side">
+                        <div style="font-weight:bold; font-size:0.85rem; color:${val ? '#10b981' : '#f43f5e'}">
+                            ${statusDisplay}
+                        </div>
+                        <button class="del-btn" onclick="if(confirm('Supprimer ?')){meds=meds.filter(x=>x.id!=${m.id});localStorage.setItem('meds_v13',JSON.stringify(meds));render();}">🗑️</button>
+                    </div>
+                </div>`;
         });
     }
+
+    document.getElementById('startDay').value = new Date().toISOString().split('T')[0];
     render();
 </script>
 </body>
