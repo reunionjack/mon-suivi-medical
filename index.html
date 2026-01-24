@@ -10,15 +10,20 @@
         body { background: var(--bg); color: var(--txt); margin: 0; padding: 10px; padding-bottom: 50px; }
         
         .app-header { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; }
-        .app-title { color: var(--p); font-weight: 900; font-size: 1.2rem; text-transform: uppercase; flex-grow: 1; text-align: center; }
+        .header-left { display: flex; gap: 8px; align-items: center; margin-left: 10px; }
+        .app-title { color: var(--p); font-weight: 900; font-size: 1.2rem; text-transform: uppercase; flex-grow: 1; text-align: center; margin-right: 60px; }
         
+        .btn-reset { background: var(--warn); border: none; color: white; border-radius: 20px; padding: 6px 12px; font-size: 0.7rem; font-weight: bold; cursor: pointer; }
+        .btn-notif { background: #475569; border: none; color: white; border-radius: 20px; padding: 6px 10px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-notif.active { background: var(--s); }
+
         .action-bar { display: flex; gap: 8px; margin-bottom: 20px; }
         .btn-top { 
             flex: 1; padding: 12px 5px; border-radius: 12px; border: none; font-weight: 700; 
             font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; 
             justify-content: center; gap: 5px; color: white; transition: all 0.2s ease;
         }
-        .btn-top:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .btn-top:hover { transform: translateY(-2px); filter: brightness(1.1); }
         .bg-blue { background: var(--p); } .bg-red { background: var(--warn); } .bg-gray { background: #475569; }
 
         .date-nav { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; background: var(--c); padding: 12px; border-radius: 50px; border: 1px solid #334155; }
@@ -29,7 +34,6 @@
             border-left: 8px solid #475569; display: flex; align-items: center; gap: 15px; 
             cursor: pointer; transition: all 0.2s ease; 
         }
-        .med-card:hover { background: #2d3748; transform: translateX(5px); }
         .brd-matin { border-left-color: var(--gold); }
         .brd-midi { border-left-color: #38bdf8; }
         .brd-soir { border-left-color: #f97316; }
@@ -43,16 +47,14 @@
         .med-meta { font-size: 0.85rem; color: #94a3b8; }
         .days-left { background: #0f172a; padding: 2px 6px; border-radius: 4px; color: #38bdf8; font-weight: bold; font-size: 0.75rem; }
         
-        .reorder-btns { display: flex; gap: 5px; }
-        .order-btn { background: #334155; border: none; color: #38bdf8; border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; cursor: pointer; }
+        .order-btn { background: #334155; border: none; color: #38bdf8; border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; cursor: pointer; margin-left: 4px; }
 
         .admin-panel { display: none; background: var(--c); padding: 20px; border-radius: 12px; border: 2px solid var(--p); margin-bottom: 15px; }
-        .input-group { margin-bottom: 15px; }
-        label { font-size: 0.75rem; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 8px; }
-        input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 1rem; }
+        input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 1rem; margin-top: 5px; }
+        label { font-size: 0.75rem; color: #94a3b8; font-weight: bold; display: block; margin-top: 10px; }
         
-        .period-selector { display: flex; gap: 5px; margin-bottom: 15px; }
-        .p-btn { flex: 1; padding: 10px 2px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; cursor: pointer; font-size: 0.65rem; transition: 0.2s; }
+        .period-selector { display: flex; gap: 5px; margin-top: 10px; }
+        .p-btn { flex: 1; padding: 10px 2px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; cursor: pointer; font-size: 0.65rem; }
         
         .act-Matin { background: var(--gold) !important; color: #000 !important; font-weight: bold; }
         .act-Midi { background: #38bdf8 !important; color: #000 !important; font-weight: bold; }
@@ -66,9 +68,11 @@
 <body>
 
     <div class="app-header">
-        <button onclick="if(confirm('Tout effacer ?')){localStorage.clear();location.reload();}" style="background:var(--warn); border:none; color:white; border-radius:20px; padding:6px 12px; font-size:0.7rem; font-weight:bold; cursor:pointer; margin-left:10px;">RESET</button>
+        <div class="header-left">
+            <button class="btn-reset" onclick="if(confirm('Tout effacer ?')){localStorage.clear();location.reload();}">RESET</button>
+            <button id="notifBtn" class="btn-notif" onclick="toggleNotifications()" title="Activer les rappels">🔔</button>
+        </div>
         <div class="app-title">Ma Pharmacie</div>
-        <div style="width:60px"></div>
     </div>
 
     <div class="action-bar">
@@ -94,37 +98,76 @@
 
     <div id="adminPanel" class="admin-panel">
         <input type="hidden" id="editGroupId">
-        <div class="input-group"><label>Nom du médicament</label><input type="text" id="name"></div>
-        <div class="input-group"><label>Date de début</label><input type="date" id="startDay"></div>
+        <label>Nom du médicament</label><input type="text" id="name">
+        <label>Date de début</label><input type="date" id="startDay">
         <div id="classicFields">
-            <div class="input-group"><label>Durée (jours)</label><input type="number" id="jours" value="30"></div>
+            <label>Durée (jours)</label><input type="number" id="jours" value="30">
         </div>
-        <div class="input-group">
-            <label>Moments de prise</label>
-            <div class="period-selector">
-                <button class="p-btn" data-p="Matin" onclick="toggleP(this)">Matin</button>
-                <button class="p-btn" data-p="Midi" onclick="toggleP(this)">Midi</button>
-                <button class="p-btn" data-p="Soir" onclick="toggleP(this)">Soir</button>
-                <button class="p-btn" data-p="Coucher" onclick="toggleP(this)">Couch.</button>
-                <button class="p-btn" data-p="Crise" onclick="toggleP(this, true)">🚨 Crise</button>
-            </div>
+        <label>Moments de prise</label>
+        <div class="period-selector">
+            <button class="p-btn" data-p="Matin" onclick="toggleP(this)">Matin</button>
+            <button class="p-btn" data-p="Midi" onclick="toggleP(this)">Midi</button>
+            <button class="p-btn" data-p="Soir" onclick="toggleP(this)">Soir</button>
+            <button class="p-btn" data-p="Coucher" onclick="toggleP(this)">Couch.</button>
+            <button class="p-btn" data-p="Crise" onclick="toggleP(this, true)">🚨 Crise</button>
         </div>
-        <button class="btn-top bg-blue" style="width:100%; height:50px; margin-bottom:10px" onclick="saveMed()">ENREGISTRER</button>
+        <button class="btn-top bg-blue" style="width:100%; height:50px; margin-top:20px; margin-bottom:10px" onclick="saveMed()">ENREGISTRER</button>
         <button class="btn-top bg-gray" style="width:100%" onclick="closePanels()">ANNULER</button>
     </div>
 
     <div id="crisePanel" class="admin-panel" style="border-color: var(--warn);">
         <h3 style="margin:0 0 15px 0; color:var(--warn)">🚨 Enregistrer une crise</h3>
-        <div class="input-group"><label>Date de la prise</label><input type="date" id="criseRetroDate"></div>
-        <div id="criseChoices"></div>
+        <label>Date de la prise</label><input type="date" id="criseRetroDate">
+        <div id="criseChoices" style="margin-top:15px"></div>
         <button class="btn-top bg-gray" style="width:100%; margin-top:10px" onclick="closePanels()">ANNULER</button>
     </div>
 
 <script>
     let curD = new Date(); curD.setHours(0,0,0,0);
-    let meds = JSON.parse(localStorage.getItem('meds_v17') || "[]");
-    let hist = JSON.parse(localStorage.getItem('hist_v17') || "{}");
+    let meds = JSON.parse(localStorage.getItem('meds_v18') || "[]");
+    let hist = JSON.parse(localStorage.getItem('hist_v18') || "{}");
+    let notifsEnabled = localStorage.getItem('notifs_active') === 'true';
 
+    // --- LOGIQUE NOTIFICATIONS ---
+    function toggleNotifications() {
+        if (!("Notification" in window)) return alert("Ce navigateur ne supporte pas les notifications.");
+        
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                notifsEnabled = !notifsEnabled;
+                localStorage.setItem('notifs_active', notifsEnabled);
+                updateNotifBtn();
+                if(notifsEnabled) new Notification("Ma Pharmacie", { body: "Rappels activés !" });
+            }
+        });
+    }
+
+    function updateNotifBtn() {
+        const btn = document.getElementById('notifBtn');
+        btn.classList.toggle('active', notifsEnabled);
+        btn.innerHTML = notifsEnabled ? "🔔" : "🔕";
+    }
+
+    // Vérification automatique toutes les minutes
+    setInterval(() => {
+        if (!notifsEnabled) return;
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMin = now.getMinutes();
+        const k = now.toLocaleDateString('en-CA');
+
+        meds.forEach(m => {
+            if (m.p === 'Crise') return;
+            // Si l'heure correspond et que ce n'est pas encore coché aujourd'hui
+            if (m.h === currentHour && currentMin === 0) {
+                if (!hist[k] || !hist[k][m.id]) {
+                    new Notification("💊 Rappel Médicament", { body: `C'est l'heure de prendre : ${m.n} (${m.p})` });
+                }
+            }
+        });
+    }, 60000);
+
+    // --- LOGIQUE CORE ---
     function closePanels() { 
         document.querySelectorAll('.admin-panel').forEach(p => p.style.display='none');
         document.getElementById('mainUI').style.display='block';
@@ -154,20 +197,19 @@
         Object.values(groups).forEach(m => {
             list.innerHTML += `<div class="config-item">
                 <span style="font-weight:bold; color:white;">${m.n}</span>
-                <div class="config-btns">
-                    <button style="background:var(--p); color:white; border:none; padding:8px 12px; border-radius:8px; font-weight:bold;" onclick="openForm(${m.gid})">Modifier</button>
-                    <button style="background:var(--warn); border:none; padding:8px; border-radius:8px; color:white;" onclick="deleteMed(${m.gid})">🗑️</button>
+                <div>
+                    <button style="background:var(--p); color:white; border:none; padding:8px 12px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="openForm(${m.gid})">Modifier</button>
+                    <button style="background:var(--warn); border:none; padding:8px; border-radius:8px; color:white; margin-left:5px; cursor:pointer;" onclick="deleteMed(${m.gid})">🗑️</button>
                 </div>
             </div>`;
         });
         document.getElementById('configPanel').style.display = 'block';
-        window.scrollTo(0,0);
     }
 
     function deleteMed(gid) {
         if(confirm("Supprimer ce médicament ?")) {
             meds = meds.filter(m => m.gid !== gid);
-            localStorage.setItem('meds_v17', JSON.stringify(meds));
+            localStorage.setItem('meds_v18', JSON.stringify(meds));
             toggleConfig();
         }
     }
@@ -192,7 +234,6 @@
             document.getElementById('startDay').value = curD.toLocaleDateString('en-CA');
             document.getElementById('classicFields').style.display = 'block';
         }
-        window.scrollTo(0,0);
     }
 
     function saveMed() {
@@ -210,15 +251,14 @@
             const old = existing.find(ex => ex.p === p);
             meds.push({
                 id: old ? old.id : (Date.now() + Math.random()), 
-                gid: gid, n: name, p: p,
-                s: startVal,
+                gid: gid, n: name, p: p, s: startVal,
                 d: (p === 'Crise') ? 9999 : parseInt(document.getElementById('jours').value),
                 h: (p==='Matin'?8 : p==='Midi'?12 : p==='Soir'?19 : p==='Coucher'?22 : 23),
                 t: (p==='Matin'?'08:00':p==='Midi'?'12:00':p==='Soir'?'19:00':p==='Coucher'?'22:00':'Libre'),
                 o: old ? old.o : Date.now()
             });
         });
-        localStorage.setItem('meds_v17', JSON.stringify(meds));
+        localStorage.setItem('meds_v18', JSON.stringify(meds));
         closePanels();
     }
 
@@ -228,22 +268,17 @@
         const idx = sameCat.findIndex(x => x.id === id);
         if (dir === -1 && idx > 0) [sameCat[idx].o, sameCat[idx-1].o] = [sameCat[idx-1].o, sameCat[idx].o];
         else if (dir === 1 && idx < sameCat.length - 1) [sameCat[idx].o, sameCat[idx+1].o] = [sameCat[idx+1].o, sameCat[idx].o];
-        localStorage.setItem('meds_v17', JSON.stringify(meds));
+        localStorage.setItem('meds_v18', JSON.stringify(meds));
         render();
     }
 
     function showCrisePanel() {
         document.getElementById('mainUI').style.display = 'none';
         document.querySelectorAll('.admin-panel').forEach(p => p.style.display='none');
-        
-        // CORRECTION APPLIQUÉE ICI : Synchronisation avec curD (la date choisie)
-        const currentCalendarDate = curD.toLocaleDateString('en-CA');
-        document.getElementById('criseRetroDate').value = currentCalendarDate;
-        
+        document.getElementById('criseRetroDate').value = curD.toLocaleDateString('en-CA');
         const crises = meds.filter(m => m.p === 'Crise');
         const container = document.getElementById('criseChoices');
         container.innerHTML = crises.length ? "" : "<p>Aucun médicament de crise.</p>";
-        
         crises.forEach(m => {
             const btn = document.createElement('button');
             btn.className = "btn-top bg-blue"; btn.style.width = "100%"; btn.style.marginBottom = "10px";
@@ -252,13 +287,12 @@
                 const date = document.getElementById('criseRetroDate').value;
                 if(!hist[date]) hist[date] = {};
                 hist[date][m.id] = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-                localStorage.setItem('hist_v17', JSON.stringify(hist));
+                localStorage.setItem('hist_v18', JSON.stringify(hist));
                 closePanels();
             };
             container.appendChild(btn);
         });
         document.getElementById('crisePanel').style.display = 'block';
-        window.scrollTo(0,0);
     }
 
     function parseDateLocal(s) {
@@ -271,45 +305,33 @@
         document.getElementById('dateDisplay').innerText = (k === new Date().toLocaleDateString('en-CA')) ? "Aujourd'hui" : curD.toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
         const listDiv = document.getElementById('list');
         listDiv.innerHTML = "";
-        
         meds.sort((a, b) => a.h - b.h || a.o - b.o);
-        
         meds.forEach(m => {
             const val = hist[k] && hist[k][m.id];
             if (m.p === 'Crise' && !val) return;
-            
-            const startDay = parseDateLocal(m.s);
-            const targetDay = parseDateLocal(k);
-            const diff = Math.round((targetDay - startDay) / 86400000);
-            
-            let daysInfo = "";
+            const diff = Math.round((parseDateLocal(k) - parseDateLocal(m.s)) / 86400000);
             if (m.p !== 'Crise') {
                 if(diff < 0 || (m.d - diff) <= 0) return;
-                const rem = m.d - diff;
-                daysInfo = `<span class="days-left">${rem === 1 ? 'Dernier jour' : 'J-' + rem}</span>`;
-            } else {
-                if (diff < 0) return;
-            }
+            } else if (diff < 0) return;
 
+            const rem = m.d - diff;
+            const daysInfo = m.p !== 'Crise' ? `<span class="days-left">${rem === 1 ? 'Dernier' : 'J-' + rem}</span>` : "";
             const icon = m.p==='Matin'?'☀️':m.p==='Midi'?'🕛':m.p==='Soir'?'🌙':m.p==='Coucher'?'🛌':'🚨';
+
             listDiv.innerHTML += `
                 <div class="med-card brd-${m.p.toLowerCase()}" onclick="if(!['BUTTON','INPUT'].includes(event.target.tagName)) openForm(${m.gid})">
-                    <input type="checkbox" class="chk" ${val?'checked':''} onchange="const d='${k}'; if(!hist[d])hist[d]={}; hist[d][${m.id}]=this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null; localStorage.setItem('hist_v17',JSON.stringify(hist)); render(); event.stopPropagation();">
+                    <input type="checkbox" class="chk" ${val?'checked':''} onchange="const d='${k}'; if(!hist[d])hist[d]={}; hist[d][${m.id}]=this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null; localStorage.setItem('hist_v18',JSON.stringify(hist)); render(); event.stopPropagation();">
                     <div class="med-info">
-                        <div class="med-name-row">
-                            <div class="med-name">${m.n}</div>
-                            <div class="reorder-btns">
-                                <button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, -1)">↑</button>
-                                <button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, 1)">↓</button>
-                            </div>
+                        <div class="med-name-row"><div class="med-name">${m.n}</div>
+                            <div><button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, -1)">↑</button><button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, 1)">↓</button></div>
                         </div>
                         <div class="med-meta" style="display:flex; justify-content:space-between; align-items:center;">
-                            <span>${icon} ${m.p} • ${val ? 'Pris à ' + val : 'Prévu à ' + m.t}</span>
-                            ${daysInfo}
+                            <span>${icon} ${m.p} • ${val ? 'Pris à ' + val : 'Prévu à ' + m.t}</span>${daysInfo}
                         </div>
                     </div>
                 </div>`;
         });
+        updateNotifBtn();
     }
     render();
 </script>
