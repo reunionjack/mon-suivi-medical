@@ -1,5 +1,5 @@
 {
-  "name": "Suivi de mes ordonnances",
+  "name": "Suivi de mon ordonnance",
   "short_name": "Suivi Ordo",
   "description": "Gestion simplifiée et rappels de prise de médicaments.",
   "id": "com.reunionjack.suiviordonnance",
@@ -28,5 +28,4 @@
       "purpose": "any"
     }
   ]
-
 }
