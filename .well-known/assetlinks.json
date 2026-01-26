@@ -2,7 +2,7 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "com.reunionjack.doseo",
+    "package_name": "io.github.reunionjack.twa",
     "sha256_cert_fingerprints": ["E9:E4:DE:0E:C7:7C:2D:B3:7A:4C:28:63:E6:43:B7:EC:C7:D1:FE:36:05:46:94:6A:D1:8F:41:11:DE:16:38:FB"]
   }
 }]
