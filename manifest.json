@@ -2,7 +2,7 @@
   "name": "Suivi de mon ordonnance",
   "short_name": "Suivi Ordo",
   "description": "Gestion simplifiée et rappels de prise de médicaments.",
-  "id": "com.reunionjack.suivi-ordonnance",
+  "id": "com.reunionjack.doseo",
   "start_url": "index.html",
   "scope": "./",
   "display": "standalone",
@@ -28,4 +28,5 @@
       "purpose": "any"
     }
   ]
+
 }
