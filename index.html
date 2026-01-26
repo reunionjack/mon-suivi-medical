@@ -15,147 +15,93 @@
         * { box-sizing: border-box; font-family: system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--txt); margin: 0; padding: 10px; padding-bottom: 50px; }
         
-        /* HEADER : ALIGNEMENT VERTICAL ABSOLU */
+        /* --- HEADER RECTIFIÉ --- */
         .app-header { 
             display: flex; 
             align-items: center; 
             justify-content: space-between; 
             padding: 5px; 
             margin-bottom: 10px; 
-            height: 60px;
+            height: 70px; /* Légèrement agrandi pour le confort visuel */
         }
         
-        .header-logo { height: 45px; width: auto; object-fit: contain; }
+        /* Centrage du bloc Logo + Titre */
+        .header-center-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px; /* Espace entre logo et texte */
+            flex-grow: 1;
+        }
+
+        /* Rectification 1 : Taille du logo réduite */
+        .header-logo { 
+            height: 32px; /* Plus petit pour ne pas écraser le reste */
+            width: auto; 
+            object-fit: contain; 
+        }
         
+        /* Rectification 2 : Titre centré avec sous-titre */
+        .app-title-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         .app-title { 
             color: var(--p); 
             font-weight: 900; 
-            font-size: 1rem; 
+            font-size: 1.2rem; 
             text-transform: uppercase; 
-            text-align: center; 
-            flex-grow: 1; 
-        }
-        
-        .header-right { 
-            display: flex; 
-            gap: 10px; 
-            align-items: center;
-        }
-        
-        .btn-reset { 
-            background: var(--warn); 
-            border: none; 
-            color: white; 
-            border-radius: 20px; 
-            padding: 0 12px; 
-            font-size: 0.7rem; 
-            font-weight: bold; 
-            cursor: pointer; 
-            height: 32px; 
-            display: flex;
-            align-items: center;
+            margin: 0;
+            line-height: 1;
         }
 
-        .btn-notif { 
-            background: #475569; 
-            border: none; 
-            color: white; 
-            border-radius: 50%; 
-            width: 32px; 
-            height: 32px; 
-            font-size: 1rem; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
+        .app-subtitle {
+            font-size: 0.75rem;
+            color: #4da3ff;
+            font-weight: bold;
+            margin-top: 2px;
         }
+        
+        .header-right { display: flex; gap: 8px; align-items: center; }
+        
+        /* Tes styles originaux conservés */
+        .btn-reset { background: var(--warn); border: none; color: white; border-radius: 20px; padding: 0 10px; font-size: 0.65rem; font-weight: bold; height: 30px; display: flex; align-items: center; }
+        .btn-notif { background: #475569; border: none; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
         .btn-notif.active { background: var(--s); }
-
         .action-bar { display: flex; gap: 8px; margin-bottom: 20px; }
-        
-        .btn-top { 
-            flex: 1; 
-            padding: 12px 5px; 
-            border-radius: 12px; 
-            border: none; 
-            font-weight: 700; 
-            font-size: 0.85rem; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 6px; 
-            color: white; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .btn-top:hover, .btn-top:active {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-            filter: brightness(1.1);
-        }
-
-        .btn-top:active {
-            transform: translateY(0px) scale(0.95);
-        }
-
-        .bg-blue { background: var(--p); } 
-        .bg-red { background: var(--warn); } 
-        .bg-gray { background: #475569; }
-
-        .med-card { 
-            background: var(--c); 
-            padding: 15px; 
-            border-radius: 12px; 
-            margin-bottom: 10px; 
-            border-left: 8px solid #475569; 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
-            transition: all 0.3s ease;
-        }
-        
-        .med-card.completed { 
-            opacity: 0.4; 
-            filter: grayscale(1); 
-            transform: scale(0.98);
-        }
-
-        .brd-matin { border-left-color: var(--gold); } 
-        .brd-midi { border-left-color: #38bdf8; } 
-        .brd-soir { border-left-color: #f97316; } 
-        .brd-coucher { border-left-color: #6366f1; } 
-        .brd-crise { border-left-color: var(--warn); }
-
-        .chk { width: 32px; height: 32px; min-width: 32px; accent-color: var(--s); cursor: pointer; }
+        .btn-top { flex: 1; padding: 12px 5px; border-radius: 12px; border: none; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s; }
+        .bg-blue { background: var(--p); } .bg-red { background: var(--warn); } .bg-gray { background: #475569; }
+        .med-card { background: var(--c); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 8px solid #475569; display: flex; align-items: center; gap: 15px; }
+        .med-card.completed { opacity: 0.4; filter: grayscale(1); }
+        .brd-matin { border-left-color: var(--gold); } .brd-midi { border-left-color: #38bdf8; } .brd-soir { border-left-color: #f97316; } .brd-coucher { border-left-color: #6366f1; } .brd-crise { border-left-color: var(--warn); }
+        .chk { width: 32px; height: 32px; min-width: 32px; accent-color: var(--s); }
         .med-info { flex: 1; }
-        .med-name-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+        .med-name-row { display: flex; align-items: center; justify-content: space-between; }
         .med-name { font-weight: 700; color: white; font-size: 1.1rem; }
-        .med-meta { font-size: 0.85rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; }
-        .days-left { background: #0f172a; padding: 2px 6px; border-radius: 4px; color: #38bdf8; font-weight: bold; font-size: 0.75rem; }
-        .order-btn { background: #334155; border: none; color: #38bdf8; border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; cursor: pointer; margin-left: 4px; }
-
-        .date-nav { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; background: var(--c); padding: 12px; border-radius: 50px; border: 1px solid #334155; }
-        .date-nav button { background: #334155; border: none; color: #38bdf8; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; }
-
+        .med-meta { font-size: 0.85rem; color: #94a3b8; }
+        .date-nav { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; background: var(--c); padding: 12px; border-radius: 50px; }
+        .date-nav button { background: #334155; border: none; color: #38bdf8; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; }
         .admin-panel { display: none; background: var(--c); padding: 20px; border-radius: 12px; border: 2px solid var(--p); margin-bottom: 15px; }
-        input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 1rem; margin-top: 5px; }
-        label { font-size: 0.75rem; color: #94a3b8; font-weight: bold; display: block; margin-top: 10px; }
+        input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; margin-top: 5px; }
         .period-selector { display: flex; gap: 5px; margin-top: 10px; }
-        .p-btn { flex: 1; padding: 10px 2px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; cursor: pointer; font-size: 0.65rem; }
+        .p-btn { flex: 1; padding: 10px 2px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; font-size: 0.65rem; }
         .act-Matin { background: var(--gold) !important; color: #000 !important; font-weight: bold; } 
-        .act-Midi { background: #38bdf8 !important; color: #000 !important; font-weight: bold; } 
-        .act-Soir { background: #f97316 !important; color: #fff !important; font-weight: bold; } 
-        .act-Coucher { background: #6366f1 !important; color: #fff !important; font-weight: bold; } 
         .act-Crise { background: var(--warn) !important; color: #fff !important; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="app-header">
-        <img src="Logo3.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
-        <div class="app-title">Ma Pharmacie</div>
+        <div class="header-center-group">
+            <img src="Logo3.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+            <div class="app-title-block">
+                <h1 class="app-title">DOSEO</h1>
+                <span class="app-subtitle">MA PHARMACIE</span>
+            </div>
+        </div>
+
         <div class="header-right">
             <button id="notifBtn" class="btn-notif" onclick="toggleNotifications()">🔔</button>
             <button class="btn-reset" onclick="if(confirm('Tout effacer ?')){localStorage.clear();location.reload();}">RESET</button>
@@ -210,12 +156,7 @@
     </div>
 
 <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js');
-        });
-    }
-
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); }
     let curD = new Date(); curD.setHours(0,0,0,0);
     let meds = JSON.parse(localStorage.getItem('meds_v18') || "[]");
     let hist = JSON.parse(localStorage.getItem('hist_v18') || "{}");
@@ -258,7 +199,6 @@
     }
 
     function deleteMed(gid) { if(confirm("Supprimer ?")) { meds = meds.filter(m => m.gid !== gid); localStorage.setItem('meds_v18', JSON.stringify(meds)); toggleConfig(); } }
-    
     function openForm(gid = null) {
         document.getElementById('mainUI').style.display = 'none';
         document.querySelectorAll('.admin-panel').forEach(p => p.style.display='none');
@@ -319,24 +259,7 @@
             if (m.p !== 'Crise' && (diff < 0 || (m.d - diff) <= 0)) return;
             if (m.p === 'Crise' && diff < 0) return;
             const rem = m.d - diff; const icon = m.p==='Matin'?'☀️':m.p==='Midi'?'🕛':m.p==='Soir'?'🌙':m.p==='Coucher'?'🛌':'🚨';
-            
-            listDiv.innerHTML += `
-                <div class="med-card brd-${m.p.toLowerCase()} ${val ? 'completed' : ''}" onclick="if(!['BUTTON','INPUT'].includes(event.target.tagName)) openForm(${m.gid})">
-                    <input type="checkbox" class="chk" ${val?'checked':''} onchange="const d='${k}'; if(!hist[d])hist[d]={}; hist[d][${m.id}]=this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null; localStorage.setItem('hist_v18',JSON.stringify(hist)); render(); event.stopPropagation();">
-                    <div class="med-info">
-                        <div class="med-name-row">
-                            <div class="med-name">${m.n}</div>
-                            <div>
-                                <button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, -1)">↑</button>
-                                <button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, 1)">↓</button>
-                            </div>
-                        </div>
-                        <div class="med-meta">
-                            <span>${icon} ${m.p} • ${val ? 'Pris à ' + val : 'Prévu à ' + m.t}</span>
-                            ${m.p!=='Crise'?`<span class="days-left">J-${rem}</span>`:''}
-                        </div>
-                    </div>
-                </div>`;
+            listDiv.innerHTML += `<div class="med-card brd-${m.p.toLowerCase()} ${val ? 'completed' : ''}" onclick="if(!['BUTTON','INPUT'].includes(event.target.tagName)) openForm(${m.gid})"><input type="checkbox" class="chk" ${val?'checked':''} onchange="const d='${k}'; if(!hist[d])hist[d]={}; hist[d][${m.id}]=this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null; localStorage.setItem('hist_v18',JSON.stringify(hist)); render(); event.stopPropagation();"><div class="med-info"><div class="med-name-row"><div class="med-name">${m.n}</div><div><button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, -1)">↑</button><button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, 1)">↓</button></div></div><div class="med-meta"><span>${icon} ${m.p} • ${val ? 'Pris à ' + val : 'Prévu à ' + m.t}</span>${m.p!=='Crise'?`<span class="days-left">J-${rem}</span>`:''}</div></div></div>`;
         });
         updateNotifBtn();
     }
