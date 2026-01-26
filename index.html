@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ma Pharmacie</title>
+    <title>Suivi de mes ordonnances</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -15,58 +15,49 @@
         * { box-sizing: border-box; font-family: system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--txt); margin: 0; padding: 10px; padding-bottom: 50px; }
         
-        /* --- HEADER RECTIFIÉ --- */
+        /* --- HEADER : LOGO À GAUCHE, TITRE CENTRÉ --- */
         .app-header { 
-            display: flex; 
+            display: grid;
+            grid-template-columns: 1fr auto 1fr; 
             align-items: center; 
-            justify-content: space-between; 
             padding: 5px; 
             margin-bottom: 10px; 
-            height: 70px; /* Légèrement agrandi pour le confort visuel */
+            height: 70px;
+            width: 100%;
         }
         
-        /* Centrage du bloc Logo + Titre */
-        .header-center-group {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px; /* Espace entre logo et texte */
-            flex-grow: 1;
-        }
+        .header-left { display: flex; justify-content: flex-start; }
 
-        /* Rectification 1 : Taille du logo réduite */
         .header-logo { 
-            height: 32px; /* Plus petit pour ne pas écraser le reste */
+            height: 28px; 
             width: auto; 
             object-fit: contain; 
         }
         
-        /* Rectification 2 : Titre centré avec sous-titre */
-        .app-title-block {
+        .header-center {
             display: flex;
-            flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
 
         .app-title { 
             color: var(--p); 
             font-weight: 900; 
-            font-size: 1.2rem; 
+            font-size: 1.1rem; /* Taille adaptée pour le titre long */
             text-transform: uppercase; 
             margin: 0;
-            line-height: 1;
-        }
-
-        .app-subtitle {
-            font-size: 0.75rem;
-            color: #4da3ff;
-            font-weight: bold;
-            margin-top: 2px;
+            line-height: 1.2;
+            text-align: center;
         }
         
-        .header-right { display: flex; gap: 8px; align-items: center; }
+        .header-right { 
+            display: flex; 
+            gap: 8px; 
+            align-items: center; 
+            justify-content: flex-end;
+        }
         
-        /* Tes styles originaux conservés */
+        /* Tes styles originaux */
         .btn-reset { background: var(--warn); border: none; color: white; border-radius: 20px; padding: 0 10px; font-size: 0.65rem; font-weight: bold; height: 30px; display: flex; align-items: center; }
         .btn-notif { background: #475569; border: none; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
         .btn-notif.active { background: var(--s); }
@@ -89,17 +80,22 @@
         .p-btn { flex: 1; padding: 10px 2px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; font-size: 0.65rem; }
         .act-Matin { background: var(--gold) !important; color: #000 !important; font-weight: bold; } 
         .act-Crise { background: var(--warn) !important; color: #fff !important; font-weight: bold; }
+
+        @media (min-width: 768px) {
+            .header-logo { height: 40px; }
+            .app-title { font-size: 1.5rem; }
+        }
     </style>
 </head>
 <body>
 
     <div class="app-header">
-        <div class="header-center-group">
+        <div class="header-left">
             <img src="Logo3.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
-            <div class="app-title-block">
-                <h1 class="app-title">DOSEO</h1>
-                <span class="app-subtitle">MA PHARMACIE</span>
-            </div>
+        </div>
+
+        <div class="header-center">
+            <h1 class="app-title">Suivi de mes ordonnances</h1>
         </div>
 
         <div class="header-right">
