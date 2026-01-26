@@ -3,6 +3,6 @@
   "target": {
     "namespace": "android_app",
     "package_name": "com.reunionjack.suiviordonnance",
-    "sha256_cert_fingerprints": ["sha256"]
+    "sha256_cert_fingerprints": ["F2:10:AD:D7:C0:8E:42:E8:58:EA:7A:56:96:30:F9:1B:1A:75:09:5B:D3:76:9F:27:B1:83:C0:05:03:1C:1E:16"]
   }
 }]
