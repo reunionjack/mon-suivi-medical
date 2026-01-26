@@ -1,4 +1,4 @@
-const CACHE_NAME = 'med-v5'; // On change la version pour forcer la mise à jour
+const CACHE_NAME = 'med-v6'; // On change la version pour forcer la mise à jour
 const ASSETS = [
   'index.html', 
   'manifest.json', 
