@@ -2,7 +2,7 @@
   "name": "Doseo - Suivi Médical ",
   "short_name": "Doseo",
   "description": "Gestion simplifiée et rappels de prise de médicaments.",
-  "id": "com.reunionjack.doseo",
+  "id": "io.github.reunionjack.twa",
   "start_url": "index.html",
   "scope": "/",
   "display": "standalone",
