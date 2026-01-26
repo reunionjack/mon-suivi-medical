@@ -2,7 +2,7 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "com.votre-nom.doseo.v1",
+    "package_name": "com.reunionjack.doseo",
     "sha256_cert_fingerprints": ["VOTRE_CODE_SHA256_ICI"]
   }
 }]
