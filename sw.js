@@ -1,4 +1,4 @@
-const CACHE_NAME = 'med-v10'; // Version augmentée pour forcer la mise à jour
+const CACHE_NAME = 'med-v20'; // Version augmentée pour forcer la mise à jour
 const ASSETS = [
   './',
   'index.html',
