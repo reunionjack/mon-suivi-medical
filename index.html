@@ -69,8 +69,9 @@
         .brd-matin { border-left-color: var(--gold); } .brd-midi { border-left-color: #38bdf8; } .brd-soir { border-left-color: #f97316; } .brd-coucher { border-left-color: #6366f1; } .brd-crise { border-left-color: var(--warn); }
         .chk { width: 32px; height: 32px; min-width: 32px; accent-color: var(--s); }
         .med-info { flex: 1; }
-        .med-name-row { display: flex; align-items: center; justify-content: space-between; }
-        .med-name { font-weight: 700; color: white; font-size: 1.1rem; }
+        .med-name-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .med-name { font-weight: 700; color: white; font-size: 1.1rem; flex: 1; }
+        .order-buttons { display: flex; gap: 4px; }
         .med-meta { font-size: 0.85rem; color: #94a3b8; }
         .date-nav { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; background: var(--c); padding: 12px; border-radius: 50px; }
         .date-nav button { background: #334155; border: none; color: #38bdf8; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; }
@@ -84,7 +85,8 @@
         .act-Coucher { background: #6366f1 !important; color: #fff !important; font-weight: bold; }
         .act-Crise { background: var(--warn) !important; color: #fff !important; font-weight: bold; }
         .days-left { background: var(--p); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-left: 8px; }
-        .order-btn { background: #475569; border: none; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; margin-left: 4px; }
+        .order-btn { background: #475569; border: none; color: white; padding: 8px 12px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; margin-left: 4px; font-weight: bold; min-width: 40px; transition: all 0.2s; }
+        .order-btn:active { background: var(--p); transform: scale(0.95); }
 
         @media (min-width: 768px) {
             .header-logo { height: 40px; }
@@ -229,10 +231,29 @@
     }
 
     function moveMed(id, dir) {
-        const m = meds.find(x => x.id === id); const sameCat = meds.filter(x => x.p === m.p).sort((a,b) => a.o - b.o); const idx = sameCat.findIndex(x => x.id === id);
-        if (dir === -1 && idx > 0) [sameCat[idx].o, sameCat[idx-1].o] = [sameCat[idx-1].o, sameCat[idx].o];
-        else if (dir === 1 && idx < sameCat.length - 1) [sameCat[idx].o, sameCat[idx+1].o] = [sameCat[idx+1].o, sameCat[idx].o];
-        localStorage.setItem('meds_v18', JSON.stringify(meds)); render();
+        const m = meds.find(x => x.id === id);
+        if (!m) return;
+        
+        // Filtrer les médicaments du même moment et les trier par ordre
+        const sameCat = meds.filter(x => x.p === m.p).sort((a,b) => a.o - b.o);
+        const idx = sameCat.findIndex(x => x.id === id);
+        
+        // Échanger les valeurs d'ordre
+        if (dir === -1 && idx > 0) {
+            // Monter (échanger avec le précédent)
+            const temp = sameCat[idx].o;
+            sameCat[idx].o = sameCat[idx-1].o;
+            sameCat[idx-1].o = temp;
+        } else if (dir === 1 && idx < sameCat.length - 1) {
+            // Descendre (échanger avec le suivant)
+            const temp = sameCat[idx].o;
+            sameCat[idx].o = sameCat[idx+1].o;
+            sameCat[idx+1].o = temp;
+        }
+        
+        // Sauvegarder et rafraîchir
+        localStorage.setItem('meds_v18', JSON.stringify(meds));
+        render();
     }
 
     function showCrisePanel() {
@@ -260,7 +281,7 @@
             if (m.p !== 'Crise' && (diff < 0 || (m.d - diff) <= 0)) return;
             if (m.p === 'Crise' && diff < 0) return;
             const rem = m.d - diff; const icon = m.p==='Matin'?'☀️':m.p==='Midi'?'🕛':m.p==='Soir'?'🌙':m.p==='Coucher'?'🛌':'🚨';
-            listDiv.innerHTML += `<div class="med-card brd-${m.p.toLowerCase()} ${val ? 'completed' : ''}" onclick="if(!['BUTTON','INPUT'].includes(event.target.tagName)) openForm(${m.gid})"><input type="checkbox" class="chk" ${val?'checked':''} onchange="const d='${k}'; if(!hist[d])hist[d]={}; hist[d][${m.id}]=this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null; localStorage.setItem('hist_v18',JSON.stringify(hist)); render(); event.stopPropagation();"><div class="med-info"><div class="med-name-row"><div class="med-name">${m.n}</div><div><button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, -1)">↑</button><button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, 1)">↓</button></div></div><div class="med-meta"><span>${icon} ${m.p} • ${val ? 'Pris à ' + val : 'Prévu à ' + m.t}</span>${m.p!=='Crise'?`<span class="days-left">J-${rem}</span>`:''}</div></div></div>`;
+            listDiv.innerHTML += `<div class="med-card brd-${m.p.toLowerCase()} ${val ? 'completed' : ''}" onclick="if(!['BUTTON','INPUT'].includes(event.target.tagName)) openForm(${m.gid})"><input type="checkbox" class="chk" ${val?'checked':''} onchange="const d='${k}'; if(!hist[d])hist[d]={}; hist[d][${m.id}]=this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null; localStorage.setItem('hist_v18',JSON.stringify(hist)); render(); event.stopPropagation();"><div class="med-info"><div class="med-name-row"><div class="med-name">${m.n}</div><div class="order-buttons"><button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, -1)">↑</button><button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, 1)">↓</button></div></div><div class="med-meta"><span>${icon} ${m.p} • ${val ? 'Pris à ' + val : 'Prévu à ' + m.t}</span>${m.p!=='Crise'?`<span class="days-left">J-${rem}</span>`:''}</div></div></div>`;
         });
         updateNotifBtn();
     }
