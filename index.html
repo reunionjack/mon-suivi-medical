@@ -10,6 +10,45 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="#0f172a">
     <meta name="theme-color" content="#0284c7">
 
+    <script>
+        // NETTOYAGE FORCE DES ANCIENS CACHES ET SERVICE WORKERS
+        (async function() {
+            // 1. Désinscrire tous les anciens service workers
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (let registration of registrations) {
+                    const sw = registration.active || registration.waiting || registration.installing;
+                    if (sw && sw.scriptURL.includes('sw.js')) {
+                        // Vérifier si c'est une ancienne version
+                        registration.unregister();
+                        console.log('Ancien SW désinstallé');
+                    }
+                }
+            }
+            
+            // 2. Supprimer tous les anciens caches
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                for (let key of keys) {
+                    if (key !== 'med-v30') { // Garder seulement la dernière version
+                        await caches.delete(key);
+                        console.log('Cache supprimé:', key);
+                    }
+                }
+            }
+            
+            // 3. Réenregistrer le nouveau service worker
+            if ('serviceWorker' in navigator) {
+                try {
+                    await navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
+                    console.log('Nouveau SW enregistré');
+                } catch (e) {
+                    console.error('Erreur SW:', e);
+                }
+            }
+        })();
+    </script>
+
     <style>
         :root { --p: #0284c7; --s: #10b981; --bg: #0f172a; --c: #1e293b; --txt: #f1f5f9; --warn: #f43f5e; --gold: #eab308; }
         * { box-sizing: border-box; font-family: system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
