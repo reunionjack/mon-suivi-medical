@@ -2,7 +2,7 @@ const CACHE_NAME = 'med-v30'; // Version augmentée pour forcer la mise à jour
 const ASSETS = [
   './',
   'index.html',
-  'manifest.json',
+  'manifest-v2.json',
   'Logo3.png',
   'icon-192.png',
   'icon-512.png'
