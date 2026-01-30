@@ -111,6 +111,7 @@
         .med-name-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .med-name { font-weight: 700; color: white; font-size: 1.1rem; flex: 1; }
         .order-buttons { display: flex; gap: 4px; }
+        .order-btn { background: #334155; border: none; color: #38bdf8; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
         .med-meta { font-size: 0.85rem; color: #94a3b8; }
         .date-nav { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; background: var(--c); padding: 12px; border-radius: 50px; }
         .date-nav button { background: #334155; border: none; color: #38bdf8; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; }
@@ -124,86 +125,82 @@
         .act-Coucher { background: #6366f1 !important; color: #fff !important; font-weight: bold; }
         .act-Crise { background: var(--warn) !important; color: #fff !important; font-weight: bold; }
         .days-left { background: var(--p); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-left: 8px; }
-        .order-btn { background: #475569; border: none; color: white; padding: 8px 12px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; margin-left: 4px; font-weight: bold; min-width: 40px; transition: all 0.2s; }
-        .order-btn:active { background: var(--p); transform: scale(0.95); }
-
-        @media (min-width: 768px) {
-            .header-logo { height: 40px; }
-            .app-title { font-size: 1.5rem; }
-        }
     </style>
 </head>
 <body>
 
-    <div class="app-header">
-        <div class="header-left">
-            <img src="Logo3.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
-        </div>
-
-        <div class="header-center">
-            <h1 class="app-title">Suivi de mes ordonnances</h1>
-        </div>
-
-        <div class="header-right">
-            <button id="notifBtn" class="btn-notif" onclick="toggleNotifications()">🔔</button>
-            <button class="btn-reset" onclick="if(confirm('Tout effacer ?')){localStorage.clear();location.reload();}">RESET</button>
-        </div>
+<div class="app-header">
+    <div class="header-left">
+        <img src="Logo3.png" alt="Logo" class="header-logo">
     </div>
+    <div class="header-center">
+        <h1 class="app-title">Suivi de mes<br>ordonnances</h1>
+    </div>
+    <div class="header-right">
+        <button class="btn-notif" id="notifBtn" onclick="toggleNotifications()">🔕</button>
+        <button class="btn-reset" onclick="if(confirm('Réinitialiser ?')){localStorage.clear(); location.reload();}">🔄 Reset</button>
+    </div>
+</div>
 
+<div id="mainUI">
+    <div class="date-nav">
+        <button onclick="changeDate(-1)">◀</button>
+        <span id="dateDisplay" style="font-weight:bold; font-size:1rem; color:white;">Aujourd'hui</span>
+        <button onclick="changeDate(1)">▶</button>
+    </div>
     <div class="action-bar">
-        <button class="btn-top bg-blue" onclick="openForm()"><span>➕ Ajouter</span></button>
-        <button class="btn-top bg-red" onclick="showCrisePanel()"><span>🚨 Crise</span></button>
-        <button class="btn-top bg-gray" onclick="toggleConfig()"><span>🔧 Gérer</span></button>
+        <button class="btn-top bg-blue" onclick="openForm()">➕ Nouveau</button>
+        <button class="btn-top bg-gray" onclick="toggleConfig()">⚙️ Configurer</button>
+        <button class="btn-top bg-red" onclick="showCrisePanel()">🚨 Crise</button>
     </div>
+    <div id="list"></div>
+</div>
 
-    <div id="mainUI">
-        <div class="date-nav">
-            <button onclick="changeDate(-1)">❮</button>
-            <b id="dateDisplay">Aujourd'hui</b>
-            <button onclick="changeDate(1)">❯</button>
-        </div>
-        <div id="list"></div>
+<div id="adminPanel" class="admin-panel">
+    <h3 style="margin-top:0; color:var(--p);">Gestion médicament</h3>
+    <input type="hidden" id="editGroupId">
+    <div><label style="color:#94a3b8;">Nom du médicament</label><input type="text" id="name"></div>
+    <div><label style="color:#94a3b8;">Date de début</label><input type="date" id="startDay"></div>
+    <div id="classicFields">
+        <label style="color:#94a3b8;">Nombre de jours</label><input type="number" id="jours" value="30">
     </div>
-
-    <div id="configPanel" class="admin-panel">
-        <h3 style="margin:0 0 15px 0;">🔧 Liste des traitements</h3>
-        <div id="configList"></div>
-        <button class="btn-top bg-gray" style="width:100%; margin-top:15px" onclick="closePanels()">FERMER</button>
-    </div>
-
-    <div id="adminPanel" class="admin-panel">
-        <input type="hidden" id="editGroupId">
-        <label>Nom du médicament</label><input type="text" id="name">
-        <label>Date de début</label><input type="date" id="startDay">
-        <div id="classicFields">
-            <label>Durée (jours)</label><input type="number" id="jours" value="30">
-        </div>
-        <label>Moments de prise</label>
+    <div><label style="color:#94a3b8;">Moments de prise</label>
         <div class="period-selector">
-            <button class="p-btn" data-p="Matin" onclick="toggleP(this)">Matin</button>
-            <button class="p-btn" data-p="Midi" onclick="toggleP(this)">Midi</button>
-            <button class="p-btn" data-p="Soir" onclick="toggleP(this)">Soir</button>
-            <button class="p-btn" data-p="Coucher" onclick="toggleP(this)">Couch.</button>
+            <button class="p-btn" data-p="Matin" onclick="toggleP(this, false)">☀️ Matin</button>
+            <button class="p-btn" data-p="Midi" onclick="toggleP(this, false)">🕛 Midi</button>
+            <button class="p-btn" data-p="Soir" onclick="toggleP(this, false)">🌙 Soir</button>
+            <button class="p-btn" data-p="Coucher" onclick="toggleP(this, false)">🛌 Coucher</button>
             <button class="p-btn" data-p="Crise" onclick="toggleP(this, true)">🚨 Crise</button>
         </div>
-        <button class="btn-top bg-blue" style="width:100%; height:50px; margin-top:20px; margin-bottom:10px" onclick="saveMed()">ENREGISTRER</button>
-        <button class="btn-top bg-gray" style="width:100%" onclick="closePanels()">ANNULER</button>
     </div>
+    <div style="display:flex; gap:10px; margin-top:20px;">
+        <button class="btn-top bg-blue" style="flex:1;" onclick="saveMed()">💾 Enregistrer</button>
+        <button class="btn-top bg-gray" style="flex:1;" onclick="closePanels()">❌ Annuler</button>
+    </div>
+</div>
 
-    <div id="crisePanel" class="admin-panel" style="border-color: var(--warn);">
-        <h3 style="margin:0 0 15px 0; color:var(--warn)">🚨 Enregistrer une crise</h3>
-        <label>Date de la prise</label><input type="date" id="criseRetroDate">
-        <div id="criseChoices" style="margin-top:15px"></div>
-        <button class="btn-top bg-gray" style="width:100%; margin-top:10px" onclick="closePanels()">ANNULER</button>
-    </div>
+<div id="configPanel" class="admin-panel">
+    <h3 style="margin-top:0; color:var(--p);">Configuration des médicaments</h3>
+    <div id="configList"></div>
+    <button class="btn-top bg-gray" style="width:100%; margin-top:15px;" onclick="closePanels()">← Retour</button>
+</div>
+
+<div id="crisePanel" class="admin-panel">
+    <h3 style="margin-top:0; color:var(--p);">Enregistrer une prise en crise</h3>
+    <div><label style="color:#94a3b8;">Date de la prise</label><input type="date" id="criseRetroDate"></div>
+    <div id="criseChoices" style="margin-top:20px;"></div>
+    <button class="btn-top bg-gray" style="width:100%; margin-top:15px;" onclick="closePanels()">← Retour</button>
+</div>
 
 <script>
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); }
-    let curD = new Date(); curD.setHours(0,0,0,0);
-    let meds = JSON.parse(localStorage.getItem('meds_v18') || "[]");
-    let hist = JSON.parse(localStorage.getItem('hist_v18') || "{}");
+    let meds = JSON.parse(localStorage.getItem('meds_v18')) || [];
+    let hist = JSON.parse(localStorage.getItem('hist_v18')) || {};
+    let curD = new Date();
     let notifsEnabled = localStorage.getItem('notifs_active') === 'true';
+    let lastNotifiedMeds = JSON.parse(localStorage.getItem('last_notified')) || {};
 
+    // ========== SYSTÈME DE NOTIFICATIONS AUTOMATIQUES ==========
+    
     function toggleNotifications() {
         if (!("Notification" in window)) return alert("Notifications non supportées.");
         Notification.requestPermission().then(permission => {
@@ -211,6 +208,14 @@
                 notifsEnabled = !notifsEnabled;
                 localStorage.setItem('notifs_active', notifsEnabled);
                 updateNotifBtn();
+                if (notifsEnabled) {
+                    startNotificationLoop();
+                    alert("✅ Notifications activées ! Vous recevrez des rappels aux heures programmées.");
+                } else {
+                    alert("🔕 Notifications désactivées.");
+                }
+            } else {
+                alert("❌ Permission refusée. Activez les notifications dans les paramètres de votre navigateur.");
             }
         });
     }
@@ -222,6 +227,107 @@
             btn.innerHTML = notifsEnabled ? "🔔" : "🔕";
         }
     }
+
+    function startNotificationLoop() {
+        // Vérifier toutes les minutes si une notification doit être envoyée
+        setInterval(checkAndSendNotifications, 60000); // 60000ms = 1 minute
+        checkAndSendNotifications(); // Vérifier immédiatement aussi
+    }
+
+    function checkAndSendNotifications() {
+        if (!notifsEnabled) return;
+
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const currentTime = `${currentHour}:${currentMinute}`;
+        const today = now.toLocaleDateString('en-CA');
+
+        // Heures de prise programmées
+        const schedules = {
+            'Matin': { hour: 8, minute: 0 },
+            'Midi': { hour: 12, minute: 0 },
+            'Soir': { hour: 19, minute: 0 },
+            'Coucher': { hour: 22, minute: 0 }
+        };
+
+        // Pour chaque période de la journée
+        Object.keys(schedules).forEach(period => {
+            const schedule = schedules[period];
+            
+            // Si on est à l'heure exacte de cette période
+            if (currentHour === schedule.hour && currentMinute === schedule.minute) {
+                
+                // Trouver les médicaments à prendre pour cette période aujourd'hui
+                const medsForPeriod = meds.filter(m => {
+                    if (m.p !== period) return false;
+                    
+                    // Vérifier si le médicament est actif aujourd'hui
+                    const diff = Math.round((parseDateLocal(today) - parseDateLocal(m.s)) / 86400000);
+                    if (diff < 0 || (m.d - diff) <= 0) return false;
+                    
+                    // Vérifier si déjà pris aujourd'hui
+                    if (hist[today] && hist[today][m.id]) return false;
+                    
+                    return true;
+                });
+
+                // Si des médicaments doivent être pris
+                if (medsForPeriod.length > 0) {
+                    const notifKey = `${today}-${period}`;
+                    
+                    // Éviter d'envoyer plusieurs fois la même notification
+                    if (lastNotifiedMeds[notifKey]) return;
+                    lastNotifiedMeds[notifKey] = true;
+                    localStorage.setItem('last_notified', JSON.stringify(lastNotifiedMeds));
+                    
+                    // Préparer le message
+                    const medNames = medsForPeriod.map(m => m.n).join(', ');
+                    const icon = period === 'Matin' ? '☀️' : period === 'Midi' ? '🕛' : period === 'Soir' ? '🌙' : '🛌';
+                    
+                    sendNotification(
+                        `${icon} Rappel ${period}`,
+                        `Il est temps de prendre : ${medNames}`
+                    );
+                }
+            }
+        });
+    }
+
+    async function sendNotification(title, body) {
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+        try {
+            // Vérifier si le Service Worker est prêt
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                // Envoyer au Service Worker pour afficher la notification
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'SCHEDULE_NOTIF',
+                    title: title,
+                    body: body
+                });
+            } else {
+                // Fallback : notification directe si pas de SW
+                new Notification(title, {
+                    body: body,
+                    icon: 'icon-192.png',
+                    badge: 'icon-192.png',
+                    vibrate: [200, 100, 200],
+                    tag: 'medication-reminder'
+                });
+            }
+            console.log('Notification envoyée:', title, body);
+        } catch (e) {
+            console.error('Erreur notification:', e);
+        }
+    }
+
+    // Démarrer la boucle de notifications si elles sont activées
+    if (notifsEnabled && "Notification" in window && Notification.permission === "granted") {
+        startNotificationLoop();
+    }
+
+    // ========== FIN SYSTÈME NOTIFICATIONS ==========
 
     function closePanels() { document.querySelectorAll('.admin-panel').forEach(p => p.style.display='none'); document.getElementById('mainUI').style.display='block'; render(); }
     function changeDate(n) { curD.setDate(curD.getDate() + n); render(); }
