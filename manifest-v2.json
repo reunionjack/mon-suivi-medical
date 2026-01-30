@@ -3,8 +3,8 @@
   "short_name": "DOSEO",
   "description": "Gestion simplifiée et rappels de prise de médicaments.",
   "id": "com.reunionjack.suiviordonnance.v2",
-  "start_url": "index.html",
-  "scope": "./",
+  "start_url": "/mon-suivi-medical/",
+  "scope": "/mon-suivi-medical/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0284c7",
@@ -30,3 +30,4 @@
   ]
 
 }
+
