@@ -685,10 +685,35 @@
         let existing = meds.filter(m => m.gid === gid); 
         meds = meds.filter(m => m.gid !== gid);
         
+        // Définir les plages horaires autorisées
+        const timeRanges = {
+            'Matin': { min: '00:00', max: '11:59' },
+            'Midi': { min: '12:00', max: '17:59' },
+            'Soir': { min: '18:00', max: '23:59' },
+            'Coucher': { min: '19:00', max: '23:59' }
+        };
+        
+        // Valider les heures avant d'enregistrer
+        for (let p of selected) {
+            if (p === 'Crise') continue;
+            
+            const timeInput = document.getElementById(`time-${p}`);
+            if (timeInput && timeInput.value) {
+                const inputTime = timeInput.value;
+                const range = timeRanges[p];
+                
+                if (inputTime < range.min || inputTime > range.max) {
+                    alert(`❌ ERREUR: L'heure ${inputTime} n'est pas valide pour "${p}".\n\n` +
+                          `Heures autorisées pour ${p}: ${range.min} - ${range.max}`);
+                    return; // Annuler l'enregistrement
+                }
+            }
+        }
+        
         selected.forEach(p => {
             const old = existing.find(ex => ex.p === p);
             
-            // NOUVEAU : Récupérer l'heure personnalisée si elle existe
+            // Récupérer l'heure personnalisée si elle existe
             let customTime = null;
             let customHour = null;
             if (p !== 'Crise') {
