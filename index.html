@@ -794,8 +794,10 @@
     function render() {
         const k = curD.toLocaleDateString('en-CA');
         document.getElementById('dateDisplay').innerText = (k === new Date().toLocaleDateString('en-CA')) ? "Aujourd'hui" : curD.toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
-        const listDiv = document.getElementById('list'); listDiv.innerHTML = "";
+        const listDiv = document.getElementById('list'); 
+        listDiv.innerHTML = "";
         meds.sort((a, b) => a.h - b.h || a.o - b.o);
+        
         meds.forEach(m => {
             const val = hist[k] && hist[k][m.id]; 
             if (m.p === 'Crise' && !val) return;
@@ -804,8 +806,50 @@
             if (m.p === 'Crise' && diff < 0) return;
             const rem = m.d - diff; 
             const icon = m.p==='Matin'?'☀️':m.p==='Midi'?'🕛':m.p==='Soir'?'🌙':m.p==='Coucher'?'🛌':'🚨';
-            listDiv.innerHTML += `<div class="med-card brd-${m.p.toLowerCase()} ${val ? 'completed' : ''}" onclick="if(!['BUTTON','INPUT'].includes(event.target.tagName)) openForm(${m.gid})"><input type="checkbox" class="chk" ${val?'checked':''} onchange="const d='${k}'; if(!hist[d])hist[d]={}; hist[d][${m.id}]=this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null; localStorage.setItem('hist_v18',JSON.stringify(hist)); render(); event.stopPropagation();"><div class="med-info"><div class="med-name-row"><div class="med-name">${m.n}</div><div class="order-buttons"><button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, -1)">↑</button><button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, 1)">↓</button></div></div><div class="med-meta"><span>${icon} ${m.p} • ${val ? 'Pris à ' + val : 'Prévu à ' + m.t}</span>${m.p!=='Crise'?`<span class="days-left">J-${rem}</span>`:''}</div></div></div>`;
+            
+            // Créer la carte de médicament
+            const card = document.createElement('div');
+            card.className = `med-card brd-${m.p.toLowerCase()} ${val ? 'completed' : ''}`;
+            card.onclick = function(e) {
+                if(!['BUTTON','INPUT'].includes(e.target.tagName)) {
+                    openForm(m.gid);
+                }
+            };
+            
+            card.innerHTML = `
+                <input type="checkbox" class="chk" ${val?'checked':''} 
+                    onchange="const d='${k}'; if(!hist[d])hist[d]={}; hist[d][${m.id}]=this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null; localStorage.setItem('hist_v18',JSON.stringify(hist)); render(); event.stopPropagation();">
+                <div class="med-info">
+                    <div class="med-name-row">
+                        <div class="med-name">${m.n}</div>
+                        <div class="order-buttons">
+                            <button class="order-btn" id="up-${m.id}">↑</button>
+                            <button class="order-btn" id="down-${m.id}">↓</button>
+                        </div>
+                    </div>
+                    <div class="med-meta">
+                        <span>${icon} ${m.p} • ${val ? 'Pris à ' + val : 'Prévu à ' + m.t}</span>
+                        ${m.p!=='Crise'?`<span class="days-left">J-${rem}</span>`:''}
+                    </div>
+                </div>
+            `;
+            
+            listDiv.appendChild(card);
+            
+            // Ajouter les événements aux boutons après insertion dans le DOM
+            document.getElementById(`up-${m.id}`).addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                moveMed(m.id, -1);
+            });
+            
+            document.getElementById(`down-${m.id}`).addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                moveMed(m.id, 1);
+            });
         });
+        
         updateNotifBtn();
     }
     
