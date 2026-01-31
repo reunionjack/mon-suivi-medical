@@ -155,7 +155,8 @@
         <h1 class="app-title">Suivi de mes<br>ordonnances</h1>
     </div>
     <div class="header-right">
-        <button class="btn-notif" id="notifBtn" onclick="toggleNotifications()">🔕</button>
+        <button class="btn-notif" id="notifBtn" onclick="toggleNotifications()" title="Activer/Désactiver les notifications">🔕</button>
+        <button class="btn-notif" onclick="testNotification()" title="Tester une notification" style="background:#6366f1;">🧪</button>
         <button class="btn-reset" onclick="if(confirm('Réinitialiser ?')){localStorage.clear(); location.reload();}">🔄 Reset</button>
     </div>
 </div>
@@ -228,14 +229,20 @@
     
     function toggleNotifications() {
         if (!("Notification" in window)) return alert("Notifications non supportées.");
+        
         Notification.requestPermission().then(permission => {
             if (permission === "granted") {
                 notifsEnabled = !notifsEnabled;
                 localStorage.setItem('notifs_active', notifsEnabled);
                 updateNotifBtn();
+                
                 if (notifsEnabled) {
                     startNotificationLoop();
-                    alert("✅ Notifications activées ! Vous recevrez des rappels aux heures programmées même HORS LIGNE.");
+                    // Envoyer une notification de test
+                    sendNotification(
+                        "✅ Notifications activées !",
+                        "Vous recevrez des rappels aux heures programmées, même hors ligne."
+                    );
                 } else {
                     alert("🔕 Notifications désactivées.");
                 }
@@ -253,10 +260,21 @@
         }
     }
 
+    let notificationInterval = null;
+
     function startNotificationLoop() {
-        // Vérifier toutes les minutes si une notification doit être envoyée
-        setInterval(checkAndSendNotifications, 60000); // 60000ms = 1 minute
-        checkAndSendNotifications(); // Vérifier immédiatement aussi
+        // Arrêter l'ancien intervalle s'il existe
+        if (notificationInterval) {
+            clearInterval(notificationInterval);
+        }
+        
+        // Vérifier toutes les 30 secondes (plus réactif pour les tests)
+        notificationInterval = setInterval(checkAndSendNotifications, 30000);
+        
+        // Vérifier immédiatement aussi
+        checkAndSendNotifications();
+        
+        console.log('🔔 Boucle de notifications démarrée');
     }
 
     function checkAndSendNotifications() {
@@ -266,6 +284,8 @@
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
         const today = now.toLocaleDateString('en-CA');
+
+        console.log(`🕐 Vérification notifications : ${currentHour}:${currentMinute}`);
 
         // Pour chaque médicament avec une heure programmée
         meds.forEach(m => {
@@ -278,9 +298,12 @@
             // Vérifier si déjà pris aujourd'hui
             if (hist[today] && hist[today][m.id]) return;
             
-            // Vérifier si c'est l'heure de ce médicament
-            if (m.h === currentHour && currentMinute === 0) {
-                const notifKey = `${today}-${m.id}`;
+            // Vérifier si c'est l'heure de ce médicament (tolérance de ±1 minute)
+            const medMinute = parseInt(m.t.split(':')[1]);
+            const timeDiff = Math.abs((currentHour * 60 + currentMinute) - (m.h * 60 + medMinute));
+            
+            if (timeDiff <= 1) { // Dans la minute
+                const notifKey = `${today}-${m.id}-${currentHour}`;
                 
                 // Éviter d'envoyer plusieurs fois
                 if (lastNotifiedMeds[notifKey]) return;
@@ -288,6 +311,7 @@
                 localStorage.setItem('last_notified', JSON.stringify(lastNotifiedMeds));
                 
                 const icon = m.p==='Matin'?'☀️':m.p==='Midi'?'🕛':m.p==='Soir'?'🌙':'🛌';
+                console.log(`📣 Envoi notification pour: ${m.n}`);
                 sendNotification(
                     `${icon} Rappel ${m.p}`,
                     `Il est temps de prendre : ${m.n} (${m.t})`
@@ -297,9 +321,19 @@
     }
 
     async function sendNotification(title, body) {
-        if (!("Notification" in window) || Notification.permission !== "granted") return;
+        if (!("Notification" in window)) {
+            console.error('❌ Notifications non supportées');
+            return;
+        }
+        
+        if (Notification.permission !== "granted") {
+            console.error('❌ Permission notifications non accordée');
+            return;
+        }
 
         try {
+            console.log('📤 Envoi notification:', title, body);
+            
             // Vérifier si le Service Worker est prêt
             if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                 // Envoyer au Service Worker (fonctionne HORS LIGNE)
@@ -308,26 +342,48 @@
                     title: title,
                     body: body
                 });
+                console.log('✅ Notification envoyée via Service Worker');
             } else {
                 // Fallback : notification directe
                 new Notification(title, {
                     body: body,
-                    icon: 'icon-192.png',
-                    badge: 'icon-192.png',
+                    icon: '/icon-192.png',
+                    badge: '/icon-192.png',
                     vibrate: [200, 100, 200],
                     tag: 'medication-reminder',
                     requireInteraction: true
                 });
+                console.log('✅ Notification envoyée directement');
             }
-            console.log('✅ Notification envoyée:', title, body);
         } catch (e) {
             console.error('❌ Erreur notification:', e);
         }
     }
 
-    // Démarrer la boucle de notifications si elles sont activées
-    if (notifsEnabled && "Notification" in window && Notification.permission === "granted") {
-        startNotificationLoop();
+    // Démarrer la boucle de notifications au chargement si activées
+    window.addEventListener('load', () => {
+        if (notifsEnabled && "Notification" in window && Notification.permission === "granted") {
+            console.log('🚀 Démarrage automatique des notifications');
+            startNotificationLoop();
+        }
+    });
+
+    // Fonction de test pour les notifications
+    function testNotification() {
+        if (!("Notification" in window)) {
+            return alert("❌ Les notifications ne sont pas supportées par votre navigateur.");
+        }
+        
+        if (Notification.permission !== "granted") {
+            return alert("❌ Veuillez d'abord activer les notifications en cliquant sur le bouton 🔔");
+        }
+        
+        sendNotification(
+            "🧪 Test de notification",
+            "Si vous voyez ce message, les notifications fonctionnent parfaitement !"
+        );
+        
+        alert("✅ Notification de test envoyée ! Vous devriez la voir apparaître.");
     }
 
     // ========== FIN SYSTÈME NOTIFICATIONS ==========
@@ -355,6 +411,9 @@
     }
     
     // NOUVEAU : Afficher les champs d'heure personnalisés
+    // Variable globale pour stocker les heures temporaires pendant l'édition
+    let tempCustomTimes = {};
+    
     function updateTimeInputs() {
         const selected = Array.from(document.querySelectorAll('.p-btn[class*="act-"]:not(.act-Crise)')).map(b => b.dataset.p);
         const container = document.getElementById('timeInputs');
@@ -364,6 +423,14 @@
             customizationDiv.style.display = 'none';
             return;
         }
+        
+        // Sauvegarder les valeurs actuelles des champs avant de recréer le HTML
+        selected.forEach(period => {
+            const existingInput = document.getElementById(`time-${period}`);
+            if (existingInput && existingInput.value) {
+                tempCustomTimes[period] = existingInput.value;
+            }
+        });
         
         customizationDiv.style.display = 'block';
         container.innerHTML = '';
@@ -383,8 +450,14 @@
         };
         
         selected.forEach(period => {
-            const existingMed = meds.find(m => m.p === period && m.gid === parseFloat(document.getElementById('editGroupId').value || 0));
-            const currentTime = existingMed ? existingMed.t : defaultTimes[period];
+            // Ordre de priorité : 1) Valeur temporaire, 2) Médicament existant, 3) Valeur par défaut
+            let currentTime;
+            if (tempCustomTimes[period]) {
+                currentTime = tempCustomTimes[period];
+            } else {
+                const existingMed = meds.find(m => m.p === period && m.gid === parseFloat(document.getElementById('editGroupId').value || 0));
+                currentTime = existingMed ? existingMed.t : defaultTimes[period];
+            }
             
             container.innerHTML += `
                 <div class="time-period-row">
@@ -392,7 +465,8 @@
                     <input type="time" 
                            class="time-period-input" 
                            id="time-${period}" 
-                           value="${currentTime}">
+                           value="${currentTime}"
+                           onchange="tempCustomTimes['${period}'] = this.value;">
                 </div>
             `;
         });
@@ -420,6 +494,9 @@
         document.getElementById('mainUI').style.display = 'none';
         document.querySelectorAll('.admin-panel').forEach(p => p.style.display='none');
         document.getElementById('adminPanel').style.display = 'block';
+        
+        // Réinitialiser les heures temporaires
+        tempCustomTimes = {};
         
         if(gid) {
             const g = meds.filter(m => m.gid === gid);
