@@ -1,4 +1,4 @@
-const CACHE_NAME = 'suivi-medical-v31';
+const CACHE_NAME = 'suivi-medical-v32';
 const ASSETS = [
   '/',
   '/index.html',
@@ -93,21 +93,27 @@ self.addEventListener('fetch', (event) => {
 
 // Gestion des notifications (fonctionne hors ligne)
 self.addEventListener('message', (event) => {
+  console.log('📨 Message reçu dans le Service Worker:', event.data);
+  
   if (event.data && event.data.type === 'SCHEDULE_NOTIF') {
-    console.log('🔔 Notification reçue:', event.data.title);
+    console.log('🔔 Affichage de la notification:', event.data.title);
     
-    self.registration.showNotification(event.data.title, {
-      body: event.data.body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      vibrate: [200, 100, 200],
-      tag: 'medication-reminder',
-      requireInteraction: true,
-      actions: [
-        { action: 'mark-taken', title: 'Pris' },
-        { action: 'snooze', title: 'Reporter' }
-      ]
-    });
+    event.waitUntil(
+      self.registration.showNotification(event.data.title, {
+        body: event.data.body,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        vibrate: [200, 100, 200],
+        tag: 'medication-reminder-' + Date.now(),
+        requireInteraction: false,
+        silent: false,
+        renotify: true
+      }).then(() => {
+        console.log('✅ Notification affichée avec succès !');
+      }).catch(error => {
+        console.error('❌ Erreur lors de l\'affichage de la notification:', error);
+      })
+    );
   }
 });
 
