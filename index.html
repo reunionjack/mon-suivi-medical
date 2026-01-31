@@ -590,6 +590,27 @@
                 currentTime = existingMed ? existingMed.t : defaultTimes[period];
             }
             
+            // Définir les limites d'heures pour chaque période
+            let minTime, maxTime;
+            switch(period) {
+                case 'Matin':
+                    minTime = '00:00';
+                    maxTime = '11:59';
+                    break;
+                case 'Midi':
+                    minTime = '12:00';
+                    maxTime = '17:59';
+                    break;
+                case 'Soir':
+                    minTime = '18:00';
+                    maxTime = '23:59';
+                    break;
+                case 'Coucher':
+                    minTime = '19:00';
+                    maxTime = '23:59';
+                    break;
+            }
+            
             container.innerHTML += `
                 <div class="time-period-row">
                     <span class="time-period-label">${icons[period]} ${period}</span>
@@ -597,6 +618,8 @@
                            class="time-period-input" 
                            id="time-${period}" 
                            value="${currentTime}"
+                           min="${minTime}"
+                           max="${maxTime}"
                            onchange="tempCustomTimes['${period}'] = this.value;">
                 </div>
             `;
