@@ -143,9 +143,61 @@
             width: 120px;
             text-align: center;
         }
+        
+        /* Panneau de debug pour les notifications */
+        .debug-panel {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #0284c7;
+            border-radius: 12px;
+            padding: 15px;
+            max-width: 300px;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            z-index: 1000;
+            display: none;
+        }
+        .debug-panel.active {
+            display: block;
+        }
+        .debug-title {
+            color: #0284c7;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .debug-info {
+            margin: 5px 0;
+            padding: 5px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 4px;
+        }
+        .debug-close {
+            background: #f43f5e;
+            border: none;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
     </style>
 </head>
 <body>
+
+<!-- Panneau de debug -->
+<div id="debugPanel" class="debug-panel">
+    <div class="debug-title">
+        🐛 Debug Notifications
+        <button class="debug-close" onclick="document.getElementById('debugPanel').classList.remove('active')">✕</button>
+    </div>
+    <div id="debugContent"></div>
+</div>
 
 <div class="app-header">
     <div class="header-left">
@@ -157,6 +209,7 @@
     <div class="header-right">
         <button class="btn-notif" id="notifBtn" onclick="toggleNotifications()" title="Activer/Désactiver les notifications">🔕</button>
         <button class="btn-notif" onclick="testNotification()" title="Tester une notification" style="background:#6366f1;">🧪</button>
+        <button class="btn-notif" onclick="toggleDebug()" title="Afficher le debug" style="background:#10b981;">🐛</button>
         <button class="btn-reset" onclick="if(confirm('Réinitialiser ?')){localStorage.clear(); location.reload();}">🔄 Reset</button>
     </div>
 </div>
@@ -268,24 +321,31 @@
             clearInterval(notificationInterval);
         }
         
-        // Vérifier toutes les 30 secondes (plus réactif pour les tests)
-        notificationInterval = setInterval(checkAndSendNotifications, 30000);
+        // Vérifier toutes les 15 secondes pour être plus réactif
+        notificationInterval = setInterval(checkAndSendNotifications, 15000);
         
         // Vérifier immédiatement aussi
         checkAndSendNotifications();
         
-        console.log('🔔 Boucle de notifications démarrée');
+        console.log('🔔 Boucle de notifications démarrée (vérification toutes les 15 secondes)');
     }
 
     function checkAndSendNotifications() {
-        if (!notifsEnabled) return;
+        if (!notifsEnabled) {
+            console.log('⏸️ Notifications désactivées, pas de vérification');
+            return;
+        }
 
         const now = new Date();
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
         const today = now.toLocaleDateString('en-CA');
+        const currentTimeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
 
-        console.log(`🕐 Vérification notifications : ${currentHour}:${currentMinute}`);
+        console.log(`🕐 Vérification notifications : ${currentTimeStr}`);
+
+        let foundMedications = 0;
+        let sentNotifications = 0;
 
         // Pour chaque médicament avec une heure programmée
         meds.forEach(m => {
@@ -293,31 +353,56 @@
             
             // Vérifier si le médicament est actif aujourd'hui
             const diff = Math.round((parseDateLocal(today) - parseDateLocal(m.s)) / 86400000);
-            if (diff < 0 || (m.d - diff) <= 0) return;
+            if (diff < 0 || (m.d - diff) <= 0) {
+                return;
+            }
+            
+            foundMedications++;
             
             // Vérifier si déjà pris aujourd'hui
-            if (hist[today] && hist[today][m.id]) return;
+            if (hist[today] && hist[today][m.id]) {
+                console.log(`✅ ${m.n} déjà pris aujourd'hui`);
+                return;
+            }
             
-            // Vérifier si c'est l'heure de ce médicament (tolérance de ±1 minute)
-            const medMinute = parseInt(m.t.split(':')[1]);
-            const timeDiff = Math.abs((currentHour * 60 + currentMinute) - (m.h * 60 + medMinute));
+            // Parser l'heure du médicament
+            const medTimeParts = m.t.split(':');
+            const medHour = parseInt(medTimeParts[0]);
+            const medMinute = parseInt(medTimeParts[1]);
             
-            if (timeDiff <= 1) { // Dans la minute
-                const notifKey = `${today}-${m.id}-${currentHour}`;
+            // Calculer la différence en minutes
+            const currentTotalMinutes = currentHour * 60 + currentMinute;
+            const medTotalMinutes = medHour * 60 + medMinute;
+            const timeDiff = currentTotalMinutes - medTotalMinutes;
+            
+            console.log(`   ${m.n} (${m.p}) prévu à ${m.t}, diff: ${timeDiff} minutes`);
+            
+            // Envoyer la notification si on est dans la fenêtre de 0 à +5 minutes
+            if (timeDiff >= 0 && timeDiff <= 5) {
+                const notifKey = `${today}-${m.id}-${medHour}-${medMinute}`;
                 
                 // Éviter d'envoyer plusieurs fois
-                if (lastNotifiedMeds[notifKey]) return;
+                if (lastNotifiedMeds[notifKey]) {
+                    console.log(`   ⏭️ Notification déjà envoyée pour ${m.n}`);
+                    return;
+                }
+                
                 lastNotifiedMeds[notifKey] = true;
                 localStorage.setItem('last_notified', JSON.stringify(lastNotifiedMeds));
                 
                 const icon = m.p==='Matin'?'☀️':m.p==='Midi'?'🕛':m.p==='Soir'?'🌙':'🛌';
-                console.log(`📣 Envoi notification pour: ${m.n}`);
+                console.log(`📣 🎯 ENVOI NOTIFICATION pour: ${m.n} à ${m.t}`);
+                
                 sendNotification(
-                    `${icon} Rappel ${m.p}`,
-                    `Il est temps de prendre : ${m.n} (${m.t})`
+                    `${icon} Rappel ${m.p} - ${m.t}`,
+                    `Il est temps de prendre : ${m.n}`
                 );
+                
+                sentNotifications++;
             }
         });
+
+        console.log(`📊 Résumé: ${foundMedications} médicament(s) actif(s), ${sentNotifications} notification(s) envoyée(s)`);
     }
 
     async function sendNotification(title, body) {
@@ -383,7 +468,53 @@
             "Si vous voyez ce message, les notifications fonctionnent parfaitement !"
         );
         
-        alert("✅ Notification de test envoyée ! Vous devriez la voir apparaître.");
+        console.log("✅ Notification de test envoyée");
+    }
+
+    // Fonction pour afficher/masquer le panneau de debug
+    function toggleDebug() {
+        const panel = document.getElementById('debugPanel');
+        panel.classList.toggle('active');
+        if (panel.classList.contains('active')) {
+            updateDebugPanel();
+            // Mettre à jour toutes les 5 secondes
+            setInterval(updateDebugPanel, 5000);
+        }
+    }
+
+    function updateDebugPanel() {
+        const now = new Date();
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const today = now.toLocaleDateString('en-CA');
+        
+        let html = `<div class="debug-info">⏰ Heure actuelle: <strong>${currentTime}</strong></div>`;
+        html += `<div class="debug-info">🔔 Notifications: <strong>${notifsEnabled ? 'ON ✅' : 'OFF ❌'}</strong></div>`;
+        html += `<div class="debug-info">📅 Date: ${today}</div>`;
+        html += `<div class="debug-info" style="margin-top:10px; font-weight:bold; color:#0284c7;">Médicaments programmés aujourd'hui:</div>`;
+        
+        let count = 0;
+        meds.forEach(m => {
+            if (m.p === 'Crise') return;
+            
+            const diff = Math.round((parseDateLocal(today) - parseDateLocal(m.s)) / 86400000);
+            if (diff < 0 || (m.d - diff) <= 0) return;
+            
+            const taken = hist[today] && hist[today][m.id];
+            const icon = m.p==='Matin'?'☀️':m.p==='Midi'?'🕛':m.p==='Soir'?'🌙':'🛌';
+            const status = taken ? '✅ Pris' : '⏳ En attente';
+            
+            html += `<div class="debug-info">
+                ${icon} <strong>${m.n}</strong><br>
+                Prévu: ${m.t} | ${status}
+            </div>`;
+            count++;
+        });
+        
+        if (count === 0) {
+            html += `<div class="debug-info" style="color:#94a3b8;">Aucun médicament programmé aujourd'hui</div>`;
+        }
+        
+        document.getElementById('debugContent').innerHTML = html;
     }
 
     // ========== FIN SYSTÈME NOTIFICATIONS ==========
