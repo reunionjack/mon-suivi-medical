@@ -101,7 +101,7 @@
         .med-name-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .med-name { font-weight: 700; color: white; font-size: 1.1rem; flex: 1; }
         .order-buttons { display: flex; gap: 4px; }
-        .order-btn { background: #334155; border: none; color: #38bdf8; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+        .order-btn { background: #334155; border: none; color: #38bdf8; padding: 8px 12px; border-radius: 6px; font-size: 1.1rem; cursor: pointer; font-weight: bold; min-width: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center; }
         .med-meta { font-size: 0.85rem; color: #94a3b8; }
         .date-nav { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; background: var(--c); padding: 12px; border-radius: 50px; }
         .date-nav button { background: #334155; border: none; color: #38bdf8; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; }
@@ -605,38 +605,56 @@
     }
 
     function moveMed(id, dir) {
-        // Trouver le médicament dans le tableau principal
+        console.log('moveMed appelé:', id, dir);
+        
+        // Trouver le médicament
         const medIndex = meds.findIndex(x => x.id === id);
-        if (medIndex === -1) return;
-        
-        const m = meds[medIndex];
-        
-        // Récupérer tous les médicaments de la même période, triés par ordre
-        const sameCat = meds.filter(x => x.p === m.p).sort((a,b) => a.o - b.o);
-        const idx = sameCat.findIndex(x => x.id === id);
-        
-        // Vérifier si le déplacement est possible
-        if (dir === -1 && idx > 0) {
-            // Monter : échanger les valeurs 'o' avec le médicament précédent
-            const currentOrder = sameCat[idx].o;
-            const prevOrder = sameCat[idx-1].o;
-            
-            // Modifier directement dans le tableau meds
-            meds.find(x => x.id === sameCat[idx].id).o = prevOrder;
-            meds.find(x => x.id === sameCat[idx-1].id).o = currentOrder;
-            
-        } else if (dir === 1 && idx < sameCat.length - 1) {
-            // Descendre : échanger les valeurs 'o' avec le médicament suivant
-            const currentOrder = sameCat[idx].o;
-            const nextOrder = sameCat[idx+1].o;
-            
-            // Modifier directement dans le tableau meds
-            meds.find(x => x.id === sameCat[idx].id).o = nextOrder;
-            meds.find(x => x.id === sameCat[idx+1].id).o = currentOrder;
+        if (medIndex === -1) {
+            console.log('Médicament non trouvé');
+            return;
         }
         
-        // Sauvegarder et re-rendre
+        const m = meds[medIndex];
+        console.log('Médicament trouvé:', m.n, 'période:', m.p);
+        
+        // Trouver tous les médicaments de la même période
+        const samePeriodMeds = [];
+        for (let i = 0; i < meds.length; i++) {
+            if (meds[i].p === m.p) {
+                samePeriodMeds.push({index: i, med: meds[i]});
+            }
+        }
+        
+        // Trier par ordre
+        samePeriodMeds.sort((a, b) => a.med.o - b.med.o);
+        
+        console.log('Médicaments même période:', samePeriodMeds.length);
+        
+        // Trouver la position actuelle
+        const currentPos = samePeriodMeds.findIndex(x => x.med.id === id);
+        console.log('Position actuelle:', currentPos);
+        
+        if (dir === -1 && currentPos > 0) {
+            // Monter : échanger avec le précédent
+            const temp = meds[samePeriodMeds[currentPos].index].o;
+            meds[samePeriodMeds[currentPos].index].o = meds[samePeriodMeds[currentPos - 1].index].o;
+            meds[samePeriodMeds[currentPos - 1].index].o = temp;
+            console.log('Échange vers le haut effectué');
+        } else if (dir === 1 && currentPos < samePeriodMeds.length - 1) {
+            // Descendre : échanger avec le suivant
+            const temp = meds[samePeriodMeds[currentPos].index].o;
+            meds[samePeriodMeds[currentPos].index].o = meds[samePeriodMeds[currentPos + 1].index].o;
+            meds[samePeriodMeds[currentPos + 1].index].o = temp;
+            console.log('Échange vers le bas effectué');
+        } else {
+            console.log('Déplacement impossible');
+        }
+        
+        // Sauvegarder
         localStorage.setItem('meds_v18', JSON.stringify(meds));
+        console.log('Sauvegarde effectuée');
+        
+        // Re-rendre
         render();
     }
 
@@ -684,91 +702,51 @@
             // Créer la carte de médicament
             const card = document.createElement('div');
             card.className = `med-card brd-${m.p.toLowerCase()} ${val ? 'completed' : ''}`;
-            
-            // Créer la checkbox
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'chk';
-            checkbox.checked = !!val;
-            checkbox.addEventListener('change', function(e) {
-                e.stopPropagation();
-                const d = k;
-                if(!hist[d]) hist[d] = {};
-                hist[d][m.id] = this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null;
-                localStorage.setItem('hist_v18', JSON.stringify(hist));
-                render();
-            });
-            
-            // Créer la div med-info
-            const medInfo = document.createElement('div');
-            medInfo.className = 'med-info';
-            
-            // Créer la ligne avec le nom et les boutons
-            const nameRow = document.createElement('div');
-            nameRow.className = 'med-name-row';
-            
-            const medName = document.createElement('div');
-            medName.className = 'med-name';
-            medName.textContent = m.n;
-            
-            // Créer les boutons de réorganisation
-            const orderButtons = document.createElement('div');
-            orderButtons.className = 'order-buttons';
-            
-            const upBtn = document.createElement('button');
-            upBtn.className = 'order-btn';
-            upBtn.textContent = '↑';
-            upBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                moveMed(m.id, -1);
-            });
-            
-            const downBtn = document.createElement('button');
-            downBtn.className = 'order-btn';
-            downBtn.textContent = '↓';
-            downBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                moveMed(m.id, 1);
-            });
-            
-            orderButtons.appendChild(upBtn);
-            orderButtons.appendChild(downBtn);
-            
-            nameRow.appendChild(medName);
-            nameRow.appendChild(orderButtons);
-            
-            // Créer la ligne meta
-            const medMeta = document.createElement('div');
-            medMeta.className = 'med-meta';
-            
-            const timeSpan = document.createElement('span');
-            timeSpan.textContent = `${icon} ${m.p} • ${val ? 'Pris à ' + val : 'Prévu à ' + m.t}`;
-            medMeta.appendChild(timeSpan);
-            
-            if (m.p !== 'Crise') {
-                const daysLeft = document.createElement('span');
-                daysLeft.className = 'days-left';
-                daysLeft.textContent = `J-${rem}`;
-                medMeta.appendChild(daysLeft);
-            }
-            
-            medInfo.appendChild(nameRow);
-            medInfo.appendChild(medMeta);
-            
-            // Assembler la carte
-            card.appendChild(checkbox);
-            card.appendChild(medInfo);
-            
-            // Ajouter l'événement click sur la carte
-            card.addEventListener('click', function(e) {
+            card.onclick = function(e) {
                 if(!['BUTTON','INPUT'].includes(e.target.tagName)) {
                     openForm(m.gid);
                 }
-            });
+            };
+            
+            card.innerHTML = `
+                <input type="checkbox" class="chk" ${val?'checked':''} 
+                    onchange="const d='${k}'; if(!hist[d])hist[d]={}; hist[d][${m.id}]=this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null; localStorage.setItem('hist_v18',JSON.stringify(hist)); render(); event.stopPropagation();">
+                <div class="med-info">
+                    <div class="med-name-row">
+                        <div class="med-name">${m.n}</div>
+                        <div class="order-buttons">
+                            <button class="order-btn" id="up-${m.id}">↑</button>
+                            <button class="order-btn" id="down-${m.id}">↓</button>
+                        </div>
+                    </div>
+                    <div class="med-meta">
+                        <span>${icon} ${m.p} • ${val ? 'Pris à ' + val : 'Prévu à ' + m.t}</span>
+                        ${m.p!=='Crise'?`<span class="days-left">J-${rem}</span>`:''}
+                    </div>
+                </div>
+            `;
             
             listDiv.appendChild(card);
+            
+            // Ajouter les événements aux boutons IMMÉDIATEMENT après l'ajout de la carte
+            const upBtn = document.getElementById(`up-${m.id}`);
+            const downBtn = document.getElementById(`down-${m.id}`);
+            
+            if (upBtn) {
+                upBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    moveMed(m.id, -1);
+                };
+            }
+            
+            if (downBtn) {
+                downBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    moveMed(m.id, 1);
+                };
+            }
         });
         
         updateNotifBtn();
