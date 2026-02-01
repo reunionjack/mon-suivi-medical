@@ -605,56 +605,40 @@
     }
 
     function moveMed(id, dir) {
-        console.log('moveMed appelé:', id, dir);
+        const m = meds.find(x => x.id === id);
+        if (!m) return;
         
-        // Trouver le médicament
-        const medIndex = meds.findIndex(x => x.id === id);
-        if (medIndex === -1) {
-            console.log('Médicament non trouvé');
-            return;
+        // Filtrer les médicaments du même moment et les trier par ordre
+        const sameCat = meds.filter(x => x.p === m.p).sort((a,b) => a.o - b.o);
+        const idx = sameCat.findIndex(x => x.id === id);
+        
+        // Échanger les valeurs d'ordre DIRECTEMENT dans le tableau meds original
+        if (dir === -1 && idx > 0) {
+            // Monter (échanger avec le précédent)
+            const currentId = sameCat[idx].id;
+            const prevId = sameCat[idx-1].id;
+            
+            const currentMed = meds.find(x => x.id === currentId);
+            const prevMed = meds.find(x => x.id === prevId);
+            
+            const temp = currentMed.o;
+            currentMed.o = prevMed.o;
+            prevMed.o = temp;
+        } else if (dir === 1 && idx < sameCat.length - 1) {
+            // Descendre (échanger avec le suivant)
+            const currentId = sameCat[idx].id;
+            const nextId = sameCat[idx+1].id;
+            
+            const currentMed = meds.find(x => x.id === currentId);
+            const nextMed = meds.find(x => x.id === nextId);
+            
+            const temp = currentMed.o;
+            currentMed.o = nextMed.o;
+            nextMed.o = temp;
         }
         
-        const m = meds[medIndex];
-        console.log('Médicament trouvé:', m.n, 'période:', m.p);
-        
-        // Trouver tous les médicaments de la même période
-        const samePeriodMeds = [];
-        for (let i = 0; i < meds.length; i++) {
-            if (meds[i].p === m.p) {
-                samePeriodMeds.push({index: i, med: meds[i]});
-            }
-        }
-        
-        // Trier par ordre
-        samePeriodMeds.sort((a, b) => a.med.o - b.med.o);
-        
-        console.log('Médicaments même période:', samePeriodMeds.length);
-        
-        // Trouver la position actuelle
-        const currentPos = samePeriodMeds.findIndex(x => x.med.id === id);
-        console.log('Position actuelle:', currentPos);
-        
-        if (dir === -1 && currentPos > 0) {
-            // Monter : échanger avec le précédent
-            const temp = meds[samePeriodMeds[currentPos].index].o;
-            meds[samePeriodMeds[currentPos].index].o = meds[samePeriodMeds[currentPos - 1].index].o;
-            meds[samePeriodMeds[currentPos - 1].index].o = temp;
-            console.log('Échange vers le haut effectué');
-        } else if (dir === 1 && currentPos < samePeriodMeds.length - 1) {
-            // Descendre : échanger avec le suivant
-            const temp = meds[samePeriodMeds[currentPos].index].o;
-            meds[samePeriodMeds[currentPos].index].o = meds[samePeriodMeds[currentPos + 1].index].o;
-            meds[samePeriodMeds[currentPos + 1].index].o = temp;
-            console.log('Échange vers le bas effectué');
-        } else {
-            console.log('Déplacement impossible');
-        }
-        
-        // Sauvegarder
+        // Sauvegarder et rafraîchir
         localStorage.setItem('meds_v18', JSON.stringify(meds));
-        console.log('Sauvegarde effectuée');
-        
-        // Re-rendre
         render();
     }
 
@@ -690,7 +674,7 @@
         listDiv.innerHTML = "";
         meds.sort((a, b) => a.h - b.h || a.o - b.o);
         
-        meds.forEach((m, index) => {
+        meds.forEach(m => {
             const val = hist[k] && hist[k][m.id]; 
             if (m.p === 'Crise' && !val) return;
             const diff = Math.round((parseDateLocal(k) - parseDateLocal(m.s)) / 86400000);
@@ -699,22 +683,14 @@
             const rem = m.d - diff; 
             const icon = m.p==='Matin'?'☀️':m.p==='Midi'?'🕛':m.p==='Soir'?'🌙':m.p==='Coucher'?'🛌':'🚨';
             
-            // Créer la carte de médicament
-            const card = document.createElement('div');
-            card.className = `med-card brd-${m.p.toLowerCase()} ${val ? 'completed' : ''}`;
-            
-            // Utiliser un index unique pour éviter les problèmes avec les IDs décimaux
-            const uniqueIdx = 'med_' + index + '_' + Date.now();
-            
-            card.innerHTML = `
-                <input type="checkbox" class="chk" ${val?'checked':''} 
-                    onchange="const d='${k}'; if(!hist[d])hist[d]={}; hist[d][${m.id}]=this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null; localStorage.setItem('hist_v18',JSON.stringify(hist)); render(); event.stopPropagation();">
+            listDiv.innerHTML += `<div class="med-card brd-${m.p.toLowerCase()} ${val ? 'completed' : ''}" onclick="if(!['BUTTON','INPUT'].includes(event.target.tagName)) openForm(${m.gid})">
+                <input type="checkbox" class="chk" ${val?'checked':''} onchange="const d='${k}'; if(!hist[d])hist[d]={}; hist[d][${m.id}]=this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null; localStorage.setItem('hist_v18',JSON.stringify(hist)); render(); event.stopPropagation();">
                 <div class="med-info">
                     <div class="med-name-row">
                         <div class="med-name">${m.n}</div>
                         <div class="order-buttons">
-                            <button class="order-btn" id="up_${uniqueIdx}" type="button">↑</button>
-                            <button class="order-btn" id="down_${uniqueIdx}" type="button">↓</button>
+                            <button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, -1)">↑</button>
+                            <button class="order-btn" onclick="event.stopPropagation(); moveMed(${m.id}, 1)">↓</button>
                         </div>
                     </div>
                     <div class="med-meta">
@@ -722,42 +698,7 @@
                         ${m.p!=='Crise'?`<span class="days-left">J-${rem}</span>`:''}
                     </div>
                 </div>
-            `;
-            
-            // Click sur la carte pour éditer
-            card.addEventListener('click', function(e) {
-                if(!['BUTTON','INPUT'].includes(e.target.tagName)) {
-                    openForm(m.gid);
-                }
-            });
-            
-            listDiv.appendChild(card);
-            
-            // CRUCIAL : Attacher les événements APRÈS que la carte soit dans le DOM
-            setTimeout(() => {
-                const upButton = document.getElementById('up_' + uniqueIdx);
-                const downButton = document.getElementById('down_' + uniqueIdx);
-                
-                if (upButton) {
-                    upButton.onclick = function(e) {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        console.log('UP clicked for:', m.n);
-                        moveMed(m.id, -1);
-                        return false;
-                    };
-                }
-                
-                if (downButton) {
-                    downButton.onclick = function(e) {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        console.log('DOWN clicked for:', m.n);
-                        moveMed(m.id, 1);
-                        return false;
-                    };
-                }
-            }, 0);
+            </div>`;
         });
         
         updateNotifBtn();
