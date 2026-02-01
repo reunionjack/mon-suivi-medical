@@ -605,25 +605,37 @@
     }
 
     function moveMed(id, dir) {
-        const m = meds.find(x => x.id === id);
-        if (!m) return;
+        // Trouver le médicament dans le tableau principal
+        const medIndex = meds.findIndex(x => x.id === id);
+        if (medIndex === -1) return;
         
-        // CORRECTION : Trier par catégorie ET par ordre
+        const m = meds[medIndex];
+        
+        // Récupérer tous les médicaments de la même période, triés par ordre
         const sameCat = meds.filter(x => x.p === m.p).sort((a,b) => a.o - b.o);
         const idx = sameCat.findIndex(x => x.id === id);
         
+        // Vérifier si le déplacement est possible
         if (dir === -1 && idx > 0) {
-            // Monter
-            const temp = sameCat[idx].o;
-            sameCat[idx].o = sameCat[idx-1].o;
-            sameCat[idx-1].o = temp;
+            // Monter : échanger les valeurs 'o' avec le médicament précédent
+            const currentOrder = sameCat[idx].o;
+            const prevOrder = sameCat[idx-1].o;
+            
+            // Modifier directement dans le tableau meds
+            meds.find(x => x.id === sameCat[idx].id).o = prevOrder;
+            meds.find(x => x.id === sameCat[idx-1].id).o = currentOrder;
+            
         } else if (dir === 1 && idx < sameCat.length - 1) {
-            // Descendre
-            const temp = sameCat[idx].o;
-            sameCat[idx].o = sameCat[idx+1].o;
-            sameCat[idx+1].o = temp;
+            // Descendre : échanger les valeurs 'o' avec le médicament suivant
+            const currentOrder = sameCat[idx].o;
+            const nextOrder = sameCat[idx+1].o;
+            
+            // Modifier directement dans le tableau meds
+            meds.find(x => x.id === sameCat[idx].id).o = nextOrder;
+            meds.find(x => x.id === sameCat[idx+1].id).o = currentOrder;
         }
         
+        // Sauvegarder et re-rendre
         localStorage.setItem('meds_v18', JSON.stringify(meds));
         render();
     }
