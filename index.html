@@ -176,13 +176,12 @@
             background: rgba(30, 41, 59, 0.5);
             border-radius: 4px;
         }
-        .debug-close {
+        .debug-close-btn {
             background: #f43f5e;
             border: none;
             color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            padding: 2px 8px;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 0.7rem;
         }
@@ -190,502 +189,356 @@
 </head>
 <body>
 
-<!-- Panneau de debug -->
-<div id="debugPanel" class="debug-panel">
-    <div class="debug-title">
-        🐛 Debug Notifications
-        <button class="debug-close" onclick="document.getElementById('debugPanel').classList.remove('active')">✕</button>
-    </div>
-    <div id="debugContent"></div>
-</div>
-
-<div class="app-header">
-    <div class="header-left">
-        <img src="Logo3.png" alt="Logo" class="header-logo">
-    </div>
-    <div class="header-center">
-        <h1 class="app-title">Suivi de mes<br>ordonnances</h1>
-    </div>
-    <div class="header-right">
-        <button class="btn-notif" id="notifBtn" onclick="toggleNotifications()" title="Activer/Désactiver les notifications">🔕</button>
-        <button class="btn-notif" onclick="testNotification()" title="Tester une notification" style="background:#6366f1;">🧪</button>
-        <button class="btn-notif" onclick="toggleDebug()" title="Afficher le debug" style="background:#10b981;">🐛</button>
-        <button class="btn-reset" onclick="if(confirm('Réinitialiser ?')){localStorage.clear(); location.reload();}">🔄 Reset</button>
-    </div>
-</div>
-
 <div id="mainUI">
-    <div class="date-nav">
-        <button onclick="changeDate(-1)">◀</button>
-        <span id="dateDisplay" style="font-weight:bold; font-size:1rem; color:white;">Aujourd'hui</span>
-        <button onclick="changeDate(1)">▶</button>
+    <!-- En-tête avec logo -->
+    <div class="app-header">
+        <div class="header-left">
+            <img src="Logo3.png" alt="Logo" class="header-logo">
+        </div>
+        <div class="header-center">
+            <h1 class="app-title">Ordonnances</h1>
+        </div>
+        <div class="header-right">
+            <button class="btn-notif" id="notifBtn" onclick="toggleNotif()" title="Activer/Désactiver les notifications">🔔</button>
+            <button class="btn-reset" onclick="if(confirm('❌ Supprimer TOUTES les données ?')){localStorage.clear(); location.reload();}">⚠️ Reset</button>
+        </div>
     </div>
+
+    <!-- Barre d'action -->
     <div class="action-bar">
-        <button class="btn-top bg-blue" onclick="openForm()">➕ Nouveau</button>
-        <button class="btn-top bg-gray" onclick="toggleConfig()">⚙️ Configurer</button>
+        <button class="btn-top bg-blue" onclick="openForm()">➕ Ajouter</button>
         <button class="btn-top bg-red" onclick="showCrisePanel()">🚨 Crise</button>
+        <button class="btn-top bg-gray" onclick="exportData()">📤 Export</button>
     </div>
+
+    <!-- Navigation Date -->
+    <div class="date-nav">
+        <button onclick="curD.setDate(curD.getDate()-1); render();">◀</button>
+        <span id="dateDisplay">Aujourd'hui</span>
+        <button onclick="curD.setDate(curD.getDate()+1); render();">▶</button>
+    </div>
+
+    <!-- Liste des médicaments -->
     <div id="list"></div>
 </div>
 
-<div id="adminPanel" class="admin-panel">
-    <h3 style="margin-top:0; color:var(--p);">Gestion médicament</h3>
+<!-- Panneau Admin -->
+<div class="admin-panel" id="medPanel">
+    <h3 style="margin-top:0; color: var(--p);">💊 Médicament</h3>
     <input type="hidden" id="editGroupId">
-    <div><label style="color:#94a3b8;">Nom du médicament</label><input type="text" id="name"></div>
-    <div><label style="color:#94a3b8;">Date de début</label><input type="date" id="startDay"></div>
-    <div id="classicFields">
-        <label style="color:#94a3b8;">Nombre de jours</label><input type="number" id="jours" value="30">
+    <label>Nom du médicament</label>
+    <input id="medName" type="text" placeholder="Ex: Doliprane 1000mg">
+    
+    <label style="margin-top: 15px;">Date de début</label>
+    <input id="startDay" type="date">
+    
+    <label style="margin-top: 15px;">Durée du traitement (jours)</label>
+    <input id="jours" type="number" value="7" min="1">
+
+    <label style="margin-top: 15px;">📅 Périodes de prise</label>
+    <div class="period-selector">
+        <button class="p-btn" id="btn-Matin" onclick="togglePeriod('Matin')">☀️ Matin</button>
+        <button class="p-btn" id="btn-Midi" onclick="togglePeriod('Midi')">🕛 Midi</button>
+        <button class="p-btn" id="btn-Soir" onclick="togglePeriod('Soir')">🌙 Soir</button>
+        <button class="p-btn" id="btn-Coucher" onclick="togglePeriod('Coucher')">🛌 Coucher</button>
+        <button class="p-btn" id="btn-Crise" onclick="togglePeriod('Crise')">🚨 Crise</button>
     </div>
-    <div><label style="color:#94a3b8;">Moments de prise</label>
-        <div class="period-selector">
-            <button class="p-btn" data-p="Matin" onclick="toggleP(this, false)">☀️ Matin</button>
-            <button class="p-btn" data-p="Midi" onclick="toggleP(this, false)">🕛 Midi</button>
-            <button class="p-btn" data-p="Soir" onclick="toggleP(this, false)">🌙 Soir</button>
-            <button class="p-btn" data-p="Coucher" onclick="toggleP(this, false)">🛌 Coucher</button>
-            <button class="p-btn" data-p="Crise" onclick="toggleP(this, true)">🚨 Crise</button>
+    
+    <!-- Heures personnalisées -->
+    <div class="time-input-container" id="timeInputs">
+        <label style="font-weight: bold; color: var(--p); margin-bottom: 10px; display: block;">⏰ Heures de prise</label>
+        
+        <div class="time-period-row" id="time-row-Matin" style="display: none;">
+            <span class="time-period-label">☀️ Matin :</span>
+            <input type="time" id="time-Matin" class="time-period-input" value="08:00" min="00:00" max="11:59">
+        </div>
+        
+        <div class="time-period-row" id="time-row-Midi" style="display: none;">
+            <span class="time-period-label">🕛 Midi :</span>
+            <input type="time" id="time-Midi" class="time-period-input" value="12:00" min="12:00" max="17:59">
+        </div>
+        
+        <div class="time-period-row" id="time-row-Soir" style="display: none;">
+            <span class="time-period-label">🌙 Soir :</span>
+            <input type="time" id="time-Soir" class="time-period-input" value="19:00" min="18:00" max="23:59">
+        </div>
+        
+        <div class="time-period-row" id="time-row-Coucher" style="display: none;">
+            <span class="time-period-label">🛌 Coucher :</span>
+            <input type="time" id="time-Coucher" class="time-period-input" value="22:00" min="19:00" max="23:59">
         </div>
     </div>
-    
-    <!-- NOUVEAU : Personnalisation des heures -->
-    <div id="timeCustomization" class="time-input-container" style="display:none;">
-        <label style="color:#94a3b8; font-weight:bold; margin-bottom:10px; display:block;">⏰ Heures de prise personnalisées</label>
-        <div id="timeInputs"></div>
-    </div>
-    
-    <div style="display:flex; gap:10px; margin-top:20px;">
-        <button class="btn-top bg-blue" style="flex:1;" onclick="saveMed()">💾 Enregistrer</button>
-        <button class="btn-top bg-gray" style="flex:1;" onclick="closePanels()">❌ Annuler</button>
+
+    <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button class="btn-top bg-blue" onclick="saveMed()">💾 Enregistrer</button>
+        <button class="btn-top bg-gray" onclick="closePanels()">❌ Annuler</button>
     </div>
 </div>
 
-<div id="configPanel" class="admin-panel">
-    <h3 style="margin-top:0; color:var(--p);">Configuration des médicaments</h3>
-    <div id="configList"></div>
-    <button class="btn-top bg-gray" style="width:100%; margin-top:15px;" onclick="closePanels()">← Retour</button>
+<!-- Panneau Crise -->
+<div class="admin-panel" id="crisePanel">
+    <h3 style="margin-top:0; color: var(--warn);">🚨 Prise en crise</h3>
+    <label>Date de la prise</label>
+    <input id="criseRetroDate" type="date">
+    <div id="criseChoices" style="margin-top: 20px;"></div>
+    <button class="btn-top bg-gray" onclick="closePanels()" style="margin-top: 15px;">❌ Annuler</button>
 </div>
 
-<div id="crisePanel" class="admin-panel">
-    <h3 style="margin-top:0; color:var(--p);">Enregistrer une prise en crise</h3>
-    <div><label style="color:#94a3b8;">Date de la prise</label><input type="date" id="criseRetroDate"></div>
-    <div id="criseChoices" style="margin-top:20px;"></div>
-    <button class="btn-top bg-gray" style="width:100%; margin-top:15px;" onclick="closePanels()">← Retour</button>
+<!-- Panneau de debug notifications -->
+<div class="debug-panel" id="debugPanel">
+    <div class="debug-title">
+        🔔 Debug Notifications
+        <button class="debug-close-btn" onclick="document.getElementById('debugPanel').classList.remove('active')">×</button>
+    </div>
+    <div id="debugContent"></div>
 </div>
 
 <script>
     let meds = JSON.parse(localStorage.getItem('meds_v18')) || [];
     let hist = JSON.parse(localStorage.getItem('hist_v18')) || {};
     let curD = new Date();
-    let notifsEnabled = localStorage.getItem('notifs_active') === 'true';
-    let lastNotifiedMeds = JSON.parse(localStorage.getItem('last_notified')) || {};
+    let selectedPeriods = [];
+    let notifEnabled = localStorage.getItem('notifEnabled') === 'true';
 
-    // ========== SYSTÈME DE NOTIFICATIONS AUTOMATIQUES (FONCTIONNE HORS LIGNE) ==========
-    
-    function toggleNotifications() {
-        if (!("Notification" in window)) return alert("Notifications non supportées.");
-        
-        Notification.requestPermission().then(permission => {
-            if (permission === "granted") {
-                notifsEnabled = !notifsEnabled;
-                localStorage.setItem('notifs_active', notifsEnabled);
-                updateNotifBtn();
-                
-                if (notifsEnabled) {
-                    startNotificationLoop();
-                    // Envoyer une notification de test
-                    sendNotification(
-                        "✅ Notifications activées !",
-                        "Vous recevrez des rappels aux heures programmées, même hors ligne."
-                    );
-                } else {
-                    alert("🔕 Notifications désactivées.");
-                }
-            } else {
-                alert("❌ Permission refusée. Activez les notifications dans les paramètres de votre navigateur.");
+    function toggleNotif() {
+        if (!notifEnabled) {
+            if (!("Notification" in window)) {
+                alert("❌ Votre navigateur ne supporte pas les notifications");
+                return;
             }
-        });
+            
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    notifEnabled = true;
+                    localStorage.setItem('notifEnabled', 'true');
+                    updateNotifBtn();
+                    scheduleAllNotifications();
+                    
+                    // Afficher le panneau de debug
+                    document.getElementById('debugPanel').classList.add('active');
+                    updateDebugPanel();
+                    
+                    alert("✅ Notifications activées !\n\nVous recevrez des rappels pour vos médicaments.");
+                } else {
+                    alert("❌ Vous devez autoriser les notifications dans les paramètres de votre navigateur.");
+                }
+            });
+        } else {
+            notifEnabled = false;
+            localStorage.setItem('notifEnabled', 'false');
+            updateNotifBtn();
+            cancelAllNotifications();
+            document.getElementById('debugPanel').classList.remove('active');
+            alert("🔕 Notifications désactivées");
+        }
     }
 
     function updateNotifBtn() {
         const btn = document.getElementById('notifBtn');
-        if(btn) {
-            btn.classList.toggle('active', notifsEnabled);
-            btn.innerHTML = notifsEnabled ? "🔔" : "🔕";
+        if (notifEnabled) {
+            btn.classList.add('active');
+            btn.title = "Notifications activées - Cliquer pour désactiver";
+        } else {
+            btn.classList.remove('active');
+            btn.title = "Notifications désactivées - Cliquer pour activer";
         }
     }
 
-    let notificationInterval = null;
+    let scheduledNotifications = {};
 
-    function startNotificationLoop() {
-        // Arrêter l'ancien intervalle s'il existe
-        if (notificationInterval) {
-            clearInterval(notificationInterval);
-        }
+    function scheduleAllNotifications() {
+        // Annuler toutes les notifications existantes
+        cancelAllNotifications();
         
-        // Vérifier toutes les 15 secondes pour être plus réactif
-        notificationInterval = setInterval(checkAndSendNotifications, 15000);
+        if (!notifEnabled) return;
         
-        // Vérifier immédiatement aussi
-        checkAndSendNotifications();
-        
-        console.log('🔔 Boucle de notifications démarrée (vérification toutes les 15 secondes)');
-    }
-
-    function checkAndSendNotifications() {
-        if (!notifsEnabled) {
-            console.log('⏸️ Notifications désactivées, pas de vérification');
-            return;
-        }
-
+        const today = new Date().toLocaleDateString('en-CA');
         const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-        const today = now.toLocaleDateString('en-CA');
-        const currentTimeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
-
-        console.log(`🕐 Vérification notifications : ${currentTimeStr}`);
-
-        let foundMedications = 0;
-        let sentNotifications = 0;
-
-        // Pour chaque médicament avec une heure programmée
-        meds.forEach(m => {
-            if (m.p === 'Crise') return; // Pas de rappel auto pour les crises
-            
-            // Vérifier si le médicament est actif aujourd'hui
-            const diff = Math.round((parseDateLocal(today) - parseDateLocal(m.s)) / 86400000);
-            if (diff < 0 || (m.d - diff) <= 0) {
-                return;
-            }
-            
-            foundMedications++;
-            
-            // Vérifier si déjà pris aujourd'hui
-            if (hist[today] && hist[today][m.id]) {
-                console.log(`✅ ${m.n} déjà pris aujourd'hui`);
-                return;
-            }
-            
-            // Parser l'heure du médicament
-            const medTimeParts = m.t.split(':');
-            const medHour = parseInt(medTimeParts[0]);
-            const medMinute = parseInt(medTimeParts[1]);
-            
-            // Calculer la différence en minutes
-            const currentTotalMinutes = currentHour * 60 + currentMinute;
-            const medTotalMinutes = medHour * 60 + medMinute;
-            const timeDiff = currentTotalMinutes - medTotalMinutes;
-            
-            console.log(`   ${m.n} (${m.p}) prévu à ${m.t}, diff: ${timeDiff} minutes`);
-            
-            // Envoyer la notification si on est dans la fenêtre de 0 à +5 minutes
-            if (timeDiff >= 0 && timeDiff <= 5) {
-                const notifKey = `${today}-${m.id}-${medHour}-${medMinute}`;
-                
-                // Éviter d'envoyer plusieurs fois
-                if (lastNotifiedMeds[notifKey]) {
-                    console.log(`   ⏭️ Notification déjà envoyée pour ${m.n}`);
-                    return;
-                }
-                
-                lastNotifiedMeds[notifKey] = true;
-                localStorage.setItem('last_notified', JSON.stringify(lastNotifiedMeds));
-                
-                const icon = m.p==='Matin'?'☀️':m.p==='Midi'?'🕛':m.p==='Soir'?'🌙':'🛌';
-                console.log(`📣 🎯 ENVOI NOTIFICATION pour: ${m.n} à ${m.t}`);
-                
-                sendNotification(
-                    `${icon} Rappel ${m.p} - ${m.t}`,
-                    `Il est temps de prendre : ${m.n}`
-                );
-                
-                sentNotifications++;
-            }
-        });
-
-        console.log(`📊 Résumé: ${foundMedications} médicament(s) actif(s), ${sentNotifications} notification(s) envoyée(s)`);
-    }
-
-    async function sendNotification(title, body) {
-        if (!("Notification" in window)) {
-            console.error('❌ Notifications non supportées');
-            return;
-        }
         
-        if (Notification.permission !== "granted") {
-            console.error('❌ Permission notifications non accordée');
-            return;
-        }
-
-        try {
-            console.log('📤 Envoi notification:', title, body);
-            
-            // Vérifier si le Service Worker est prêt
-            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                // Envoyer au Service Worker (fonctionne HORS LIGNE)
-                navigator.serviceWorker.controller.postMessage({
-                    type: 'SCHEDULE_NOTIF',
-                    title: title,
-                    body: body
-                });
-                console.log('✅ Notification envoyée via Service Worker');
-            } else {
-                // Fallback : notification directe
-                new Notification(title, {
-                    body: body,
-                    icon: '/icon-192.png',
-                    badge: '/icon-192.png',
-                    vibrate: [200, 100, 200],
-                    tag: 'medication-reminder',
-                    requireInteraction: true
-                });
-                console.log('✅ Notification envoyée directement');
-            }
-        } catch (e) {
-            console.error('❌ Erreur notification:', e);
-        }
-    }
-
-    // Démarrer la boucle de notifications au chargement si activées
-    window.addEventListener('load', () => {
-        if (notifsEnabled && "Notification" in window && Notification.permission === "granted") {
-            console.log('🚀 Démarrage automatique des notifications');
-            startNotificationLoop();
-        }
-    });
-
-    // Fonction de test pour les notifications
-    function testNotification() {
-        if (!("Notification" in window)) {
-            return alert("❌ Les notifications ne sont pas supportées par votre navigateur.");
-        }
-        
-        if (Notification.permission !== "granted") {
-            return alert("❌ Veuillez d'abord activer les notifications en cliquant sur le bouton 🔔");
-        }
-        
-        sendNotification(
-            "🧪 Test de notification",
-            "Si vous voyez ce message, les notifications fonctionnent parfaitement !"
-        );
-        
-        console.log("✅ Notification de test envoyée");
-    }
-
-    // Fonction pour afficher/masquer le panneau de debug
-    function toggleDebug() {
-        const panel = document.getElementById('debugPanel');
-        panel.classList.toggle('active');
-        if (panel.classList.contains('active')) {
-            updateDebugPanel();
-            // Mettre à jour toutes les 5 secondes
-            setInterval(updateDebugPanel, 5000);
-        }
-    }
-
-    function updateDebugPanel() {
-        const now = new Date();
-        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        const today = now.toLocaleDateString('en-CA');
-        
-        let html = `<div class="debug-info">⏰ Heure actuelle: <strong>${currentTime}</strong></div>`;
-        html += `<div class="debug-info">🔔 Notifications: <strong>${notifsEnabled ? 'ON ✅' : 'OFF ❌'}</strong></div>`;
-        html += `<div class="debug-info">📅 Date: ${today}</div>`;
-        html += `<div class="debug-info" style="margin-top:10px; font-weight:bold; color:#0284c7;">Médicaments programmés aujourd'hui:</div>`;
-        
-        let count = 0;
         meds.forEach(m => {
             if (m.p === 'Crise') return;
             
             const diff = Math.round((parseDateLocal(today) - parseDateLocal(m.s)) / 86400000);
             if (diff < 0 || (m.d - diff) <= 0) return;
             
-            const taken = hist[today] && hist[today][m.id];
-            const icon = m.p==='Matin'?'☀️':m.p==='Midi'?'🕛':m.p==='Soir'?'🌙':'🛌';
-            const status = taken ? '✅ Pris' : '⏳ En attente';
+            const alreadyTaken = hist[today] && hist[today][m.id];
+            if (alreadyTaken) return;
+            
+            // Créer la date/heure de notification
+            const notifTime = new Date();
+            const [hours, minutes] = m.t.split(':');
+            notifTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            
+            const delay = notifTime - now;
+            
+            if (delay > 0) {
+                const timeoutId = setTimeout(() => {
+                    showNotification(m);
+                }, delay);
+                
+                scheduledNotifications[m.id] = timeoutId;
+                
+                console.log(`📅 Notification programmée pour ${m.n} à ${m.t} (dans ${Math.round(delay/1000/60)} minutes)`);
+            }
+        });
+        
+        updateDebugPanel();
+    }
+
+    function cancelAllNotifications() {
+        Object.values(scheduledNotifications).forEach(timeoutId => {
+            clearTimeout(timeoutId);
+        });
+        scheduledNotifications = {};
+    }
+
+    function showNotification(med) {
+        if (!notifEnabled) return;
+        
+        const title = `💊 ${med.n}`;
+        const body = `Il est temps de prendre votre médicament (${med.p} - ${med.t})`;
+        
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SCHEDULE_NOTIF',
+                title: title,
+                body: body
+            });
+        } else {
+            new Notification(title, {
+                body: body,
+                icon: '/icon-192.png',
+                badge: '/icon-192.png',
+                vibrate: [200, 100, 200],
+                requireInteraction: false
+            });
+        }
+        
+        console.log(`🔔 Notification affichée: ${title}`);
+    }
+
+    function updateDebugPanel() {
+        const debugContent = document.getElementById('debugContent');
+        const now = new Date();
+        const today = new Date().toLocaleDateString('en-CA');
+        
+        let html = `<div class="debug-info">📅 Date: ${today}</div>`;
+        html += `<div class="debug-info">🕒 Heure: ${now.toLocaleTimeString('fr-FR')}</div>`;
+        html += `<div class="debug-info">🔔 Statut: ${notifEnabled ? '✅ Activées' : '❌ Désactivées'}</div>`;
+        html += `<div class="debug-info">📊 Notifications programmées: ${Object.keys(scheduledNotifications).length}</div>`;
+        
+        html += '<div style="margin-top: 10px; font-weight: bold; color: #0284c7;">Prochaines notifications:</div>';
+        
+        meds.forEach(m => {
+            if (m.p === 'Crise') return;
+            
+            const diff = Math.round((parseDateLocal(today) - parseDateLocal(m.s)) / 86400000);
+            if (diff < 0 || (m.d - diff) <= 0) return;
+            
+            const alreadyTaken = hist[today] && hist[today][m.id];
+            
+            const notifTime = new Date();
+            const [hours, minutes] = m.t.split(':');
+            notifTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            
+            const delay = notifTime - now;
+            const isProgrammed = scheduledNotifications[m.id] !== undefined;
             
             html += `<div class="debug-info">
-                ${icon} <strong>${m.n}</strong><br>
-                Prévu: ${m.t} | ${status}
+                ${alreadyTaken ? '✅' : isProgrammed ? '⏰' : '⏸️'} ${m.n} - ${m.t}
+                ${alreadyTaken ? '(Pris)' : delay > 0 ? `(dans ${Math.round(delay/1000/60)}min)` : '(Passé)'}
             </div>`;
-            count++;
         });
         
-        if (count === 0) {
-            html += `<div class="debug-info" style="color:#94a3b8;">Aucun médicament programmé aujourd'hui</div>`;
-        }
-        
-        document.getElementById('debugContent').innerHTML = html;
+        debugContent.innerHTML = html;
     }
 
-    // ========== FIN SYSTÈME NOTIFICATIONS ==========
-
-    function closePanels() { 
-        document.querySelectorAll('.admin-panel').forEach(p => p.style.display='none'); 
-        document.getElementById('mainUI').style.display='block'; 
-        render(); 
-    }
-    
-    function changeDate(n) { curD.setDate(curD.getDate() + n); render(); }
-    
-    function toggleP(btn, isCrise) {
-        if(isCrise) { 
-            document.querySelectorAll('.p-btn').forEach(b => b.classList.remove('act-Matin','act-Midi','act-Soir','act-Coucher','act-Crise')); 
-            btn.classList.add('act-Crise'); 
-            document.getElementById('classicFields').style.display = 'none'; 
-            document.getElementById('timeCustomization').style.display = 'none';
-        } else { 
-            document.querySelector('[data-p="Crise"]').classList.remove('act-Crise'); 
-            btn.classList.toggle('act-' + btn.dataset.p); 
-            document.getElementById('classicFields').style.display = 'block';
-            updateTimeInputs();
+    // Mettre à jour le panneau de debug toutes les 10 secondes si visible
+    setInterval(() => {
+        if (document.getElementById('debugPanel').classList.contains('active')) {
+            updateDebugPanel();
         }
-    }
-    
-    // NOUVEAU : Afficher les champs d'heure personnalisés
-    // Variable globale pour stocker les heures temporaires pendant l'édition
-    let tempCustomTimes = {};
-    
-    function updateTimeInputs() {
-        const selected = Array.from(document.querySelectorAll('.p-btn[class*="act-"]:not(.act-Crise)')).map(b => b.dataset.p);
-        const container = document.getElementById('timeInputs');
-        const customizationDiv = document.getElementById('timeCustomization');
-        
-        if (selected.length === 0) {
-            customizationDiv.style.display = 'none';
-            return;
-        }
-        
-        // Sauvegarder les valeurs actuelles des champs avant de recréer le HTML
-        selected.forEach(period => {
-            const existingInput = document.getElementById(`time-${period}`);
-            if (existingInput && existingInput.value) {
-                tempCustomTimes[period] = existingInput.value;
-            }
-        });
-        
-        customizationDiv.style.display = 'block';
-        container.innerHTML = '';
-        
-        const defaultTimes = {
-            'Matin': '08:00',
-            'Midi': '12:00',
-            'Soir': '19:00',
-            'Coucher': '22:00'
-        };
-        
-        const icons = {
-            'Matin': '☀️',
-            'Midi': '🕛',
-            'Soir': '🌙',
-            'Coucher': '🛌'
-        };
-        
-        selected.forEach(period => {
-            // Ordre de priorité : 1) Valeur temporaire, 2) Médicament existant, 3) Valeur par défaut
-            let currentTime;
-            if (tempCustomTimes[period]) {
-                currentTime = tempCustomTimes[period];
-            } else {
-                const existingMed = meds.find(m => m.p === period && m.gid === parseFloat(document.getElementById('editGroupId').value || 0));
-                currentTime = existingMed ? existingMed.t : defaultTimes[period];
-            }
-            
-            // Définir les limites d'heures pour chaque période
-            let minTime, maxTime;
-            switch(period) {
-                case 'Matin':
-                    minTime = '00:00';
-                    maxTime = '11:59';
-                    break;
-                case 'Midi':
-                    minTime = '12:00';
-                    maxTime = '17:59';
-                    break;
-                case 'Soir':
-                    minTime = '18:00';
-                    maxTime = '23:59';
-                    break;
-                case 'Coucher':
-                    minTime = '19:00';
-                    maxTime = '23:59';
-                    break;
-            }
-            
-            container.innerHTML += `
-                <div class="time-period-row">
-                    <span class="time-period-label">${icons[period]} ${period}</span>
-                    <input type="time" 
-                           class="time-period-input" 
-                           id="time-${period}" 
-                           value="${currentTime}"
-                           min="${minTime}"
-                           max="${maxTime}"
-                           onchange="tempCustomTimes['${period}'] = this.value;">
-                </div>
-            `;
-        });
-    }
-    
-    function toggleConfig() {
-        document.getElementById('mainUI').style.display = 'none';
-        const list = document.getElementById('configList'); list.innerHTML = "";
-        const groups = {}; meds.forEach(m => { if(!groups[m.gid]) groups[m.gid] = m; });
-        Object.values(groups).forEach(m => {
-            list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:12px; background:#1e293b; margin-bottom:8px; border-radius:10px; align-items:center; border-left:4px solid var(--p);"><span style="font-weight:bold; color:white;">${m.n}</span><div><button style="background:var(--p); color:white; border:none; padding:8px 12px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="openForm(${m.gid})">Modifier</button><button style="background:var(--warn); border:none; padding:8px; border-radius:8px; color:white; margin-left:5px; cursor:pointer;" onclick="deleteMed(${m.gid})">🗑️</button></div></div>`;
-        });
-        document.getElementById('configPanel').style.display = 'block';
-    }
+    }, 10000);
 
-    function deleteMed(gid) { 
-        if(confirm("Supprimer ce médicament ?")) { 
-            meds = meds.filter(m => m.gid !== gid); 
-            localStorage.setItem('meds_v18', JSON.stringify(meds)); 
-            toggleConfig(); 
-        } 
-    }
-    
-    function openForm(gid = null) {
-        document.getElementById('mainUI').style.display = 'none';
-        document.querySelectorAll('.admin-panel').forEach(p => p.style.display='none');
-        document.getElementById('adminPanel').style.display = 'block';
+    function togglePeriod(p) {
+        const btn = document.getElementById(`btn-${p}`);
+        const timeRow = document.getElementById(`time-row-${p}`);
         
-        // Réinitialiser les heures temporaires
-        tempCustomTimes = {};
-        
-        if(gid) {
-            const g = meds.filter(m => m.gid === gid);
-            document.getElementById('editGroupId').value = gid; 
-            document.getElementById('name').value = g[0].n; 
-            document.getElementById('startDay').value = g[0].s; 
-            document.getElementById('jours').value = g[0].d;
-            
-            g.forEach(m => { 
-                const b = document.querySelector(`[data-p="${m.p}"]`); 
-                if(b) b.classList.add('act-'+m.p); 
-            });
-            
-            document.getElementById('classicFields').style.display = (g[0].p === 'Crise') ? 'none' : 'block';
-            updateTimeInputs();
+        if (selectedPeriods.includes(p)) {
+            selectedPeriods = selectedPeriods.filter(x => x !== p);
+            btn.classList.remove(`act-${p}`);
+            if (timeRow) timeRow.style.display = 'none';
         } else {
-            document.getElementById('editGroupId').value = ""; 
-            document.getElementById('name').value = ""; 
-            document.getElementById('startDay').value = curD.toLocaleDateString('en-CA'); 
-            document.getElementById('classicFields').style.display = 'block';
-            document.getElementById('timeCustomization').style.display = 'none';
-            document.querySelectorAll('.p-btn').forEach(b => b.classList.remove('act-Matin','act-Midi','act-Soir','act-Coucher','act-Crise'));
+            selectedPeriods.push(p);
+            btn.classList.add(`act-${p}`);
+            if (timeRow) timeRow.style.display = 'flex';
         }
+    }
+
+    function openForm(gid = null) {
+        document.getElementById('mainUI').style.display = 'none'; 
+        document.querySelectorAll('.admin-panel').forEach(p => p.style.display='none');
+        document.getElementById('medPanel').style.display='block';
+        
+        selectedPeriods = [];
+        document.querySelectorAll('.p-btn').forEach(b => b.className = 'p-btn');
+        document.querySelectorAll('.time-period-row').forEach(row => row.style.display = 'none');
+        
+        if (gid) {
+            const group = meds.filter(m => m.gid === gid);
+            if (group.length) {
+                document.getElementById('editGroupId').value = gid;
+                document.getElementById('medName').value = group[0].n;
+                document.getElementById('startDay').value = group[0].s;
+                document.getElementById('jours').value = group[0].d !== 9999 ? group[0].d : 7;
+                
+                group.forEach(m => {
+                    selectedPeriods.push(m.p);
+                    const btn = document.getElementById(`btn-${m.p}`);
+                    if (btn) btn.classList.add(`act-${m.p}`);
+                    
+                    const timeRow = document.getElementById(`time-row-${m.p}`);
+                    const timeInput = document.getElementById(`time-${m.p}`);
+                    if (timeRow && timeInput) {
+                        timeRow.style.display = 'flex';
+                        timeInput.value = m.t;
+                    }
+                });
+            }
+        } else {
+            document.getElementById('editGroupId').value = '';
+            document.getElementById('medName').value = '';
+            document.getElementById('startDay').value = new Date().toLocaleDateString('en-CA');
+            document.getElementById('jours').value = 7;
+        }
+    }
+
+    function closePanels() {
+        document.querySelectorAll('.admin-panel').forEach(p => p.style.display='none');
+        document.getElementById('mainUI').style.display='block';
+        render();
+    }
+
+    function exportData() {
+        const blob = new Blob([JSON.stringify({meds, hist}, null, 2)], {type: 'application/json'});
+        const a = document.createElement('a'); 
+        a.href = URL.createObjectURL(blob); 
+        a.download = 'suivi_medical_' + new Date().toISOString().split('T')[0] + '.json'; 
+        a.click();
     }
 
     function saveMed() {
-        const name = document.getElementById('name').value;
-        const selected = Array.from(document.querySelectorAll('.p-btn[class*="act-"]')).map(b => b.dataset.p);
-        if(!name || selected.length === 0) return alert("Nom et moment requis.");
+        const name = document.getElementById('medName').value.trim();
+        const selected = selectedPeriods;
+        
+        if (!name) { alert('⚠️ Nom requis'); return; }
+        if (selected.length === 0) { alert('⚠️ Sélectionnez au moins une période'); return; }
         
         const gid = document.getElementById('editGroupId').value ? parseFloat(document.getElementById('editGroupId').value) : Date.now();
         let existing = meds.filter(m => m.gid === gid); 
         meds = meds.filter(m => m.gid !== gid);
         
-        // Définir les plages horaires autorisées
+        // Définir les plages horaires autorisées (CORRIGÉ)
         const timeRanges = {
             'Matin': { min: '00:00', max: '11:59' },
             'Midi': { min: '12:00', max: '17:59' },
@@ -742,6 +595,12 @@
         });
         
         localStorage.setItem('meds_v18', JSON.stringify(meds)); 
+        
+        // Reprogrammer les notifications après modification
+        if (notifEnabled) {
+            scheduleAllNotifications();
+        }
+        
         closePanels();
     }
 
@@ -749,14 +608,17 @@
         const m = meds.find(x => x.id === id);
         if (!m) return;
         
+        // CORRECTION : Trier par catégorie ET par ordre
         const sameCat = meds.filter(x => x.p === m.p).sort((a,b) => a.o - b.o);
         const idx = sameCat.findIndex(x => x.id === id);
         
         if (dir === -1 && idx > 0) {
+            // Monter
             const temp = sameCat[idx].o;
             sameCat[idx].o = sameCat[idx-1].o;
             sameCat[idx-1].o = temp;
         } else if (dir === 1 && idx < sameCat.length - 1) {
+            // Descendre
             const temp = sameCat[idx].o;
             sameCat[idx].o = sameCat[idx+1].o;
             sameCat[idx+1].o = temp;
@@ -810,11 +672,13 @@
             // Créer la carte de médicament
             const card = document.createElement('div');
             card.className = `med-card brd-${m.p.toLowerCase()} ${val ? 'completed' : ''}`;
-            card.onclick = function(e) {
+            
+            // CORRECTION : Ne pas utiliser onclick sur la carte
+            card.addEventListener('click', function(e) {
                 if(!['BUTTON','INPUT'].includes(e.target.tagName)) {
                     openForm(m.gid);
                 }
-            };
+            });
             
             card.innerHTML = `
                 <input type="checkbox" class="chk" ${val?'checked':''} 
@@ -823,8 +687,8 @@
                     <div class="med-name-row">
                         <div class="med-name">${m.n}</div>
                         <div class="order-buttons">
-                            <button class="order-btn" id="up-${m.id}">↑</button>
-                            <button class="order-btn" id="down-${m.id}">↓</button>
+                            <button class="order-btn" data-id="${m.id}" data-dir="-1">↑</button>
+                            <button class="order-btn" data-id="${m.id}" data-dir="1">↓</button>
                         </div>
                     </div>
                     <div class="med-meta">
@@ -835,24 +699,27 @@
             `;
             
             listDiv.appendChild(card);
-            
-            // Ajouter les événements aux boutons après insertion dans le DOM
-            document.getElementById(`up-${m.id}`).addEventListener('click', function(e) {
+        });
+        
+        // CORRECTION : Ajouter les événements après que tout soit dans le DOM
+        document.querySelectorAll('.order-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
-                moveMed(m.id, -1);
-            });
-            
-            document.getElementById(`down-${m.id}`).addEventListener('click', function(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                moveMed(m.id, 1);
+                const id = parseFloat(this.getAttribute('data-id'));
+                const dir = parseInt(this.getAttribute('data-dir'));
+                moveMed(id, dir);
             });
         });
         
         updateNotifBtn();
     }
     
+    // Initialisation
+    updateNotifBtn();
+    if (notifEnabled) {
+        scheduleAllNotifications();
+    }
     render();
 </script>
 </body>
