@@ -281,7 +281,7 @@
     <label>Date de la prise</label>
     <input id="criseRetroDate" type="date">
     <div id="criseChoices" style="margin-top: 20px;"></div>
-    <button class="btn-top bg-gray" onclick="closePanels()" style="margin-top: 15px;">❌ Annuler</button>
+    <button class="btn-top bg-gray" onclick="closePanels()" style="margin-top: 15px; width: 100%; padding: 15px; font-size: 1rem;">❌ Annuler</button>
 </div>
 
 <!-- Panneau de debug notifications -->
@@ -690,7 +690,7 @@
         listDiv.innerHTML = "";
         meds.sort((a, b) => a.h - b.h || a.o - b.o);
         
-        meds.forEach(m => {
+        meds.forEach((m, index) => {
             const val = hist[k] && hist[k][m.id]; 
             if (m.p === 'Crise' && !val) return;
             const diff = Math.round((parseDateLocal(k) - parseDateLocal(m.s)) / 86400000);
@@ -702,11 +702,9 @@
             // Créer la carte de médicament
             const card = document.createElement('div');
             card.className = `med-card brd-${m.p.toLowerCase()} ${val ? 'completed' : ''}`;
-            card.onclick = function(e) {
-                if(!['BUTTON','INPUT'].includes(e.target.tagName)) {
-                    openForm(m.gid);
-                }
-            };
+            
+            // Utiliser un index unique pour éviter les problèmes avec les IDs décimaux
+            const uniqueIdx = 'med_' + index + '_' + Date.now();
             
             card.innerHTML = `
                 <input type="checkbox" class="chk" ${val?'checked':''} 
@@ -715,8 +713,8 @@
                     <div class="med-name-row">
                         <div class="med-name">${m.n}</div>
                         <div class="order-buttons">
-                            <button class="order-btn" id="up-${m.id}">↑</button>
-                            <button class="order-btn" id="down-${m.id}">↓</button>
+                            <button class="order-btn" id="up_${uniqueIdx}" type="button">↑</button>
+                            <button class="order-btn" id="down_${uniqueIdx}" type="button">↓</button>
                         </div>
                     </div>
                     <div class="med-meta">
@@ -726,27 +724,40 @@
                 </div>
             `;
             
+            // Click sur la carte pour éditer
+            card.addEventListener('click', function(e) {
+                if(!['BUTTON','INPUT'].includes(e.target.tagName)) {
+                    openForm(m.gid);
+                }
+            });
+            
             listDiv.appendChild(card);
             
-            // Ajouter les événements aux boutons IMMÉDIATEMENT après l'ajout de la carte
-            const upBtn = document.getElementById(`up-${m.id}`);
-            const downBtn = document.getElementById(`down-${m.id}`);
-            
-            if (upBtn) {
-                upBtn.onclick = function(e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    moveMed(m.id, -1);
-                };
-            }
-            
-            if (downBtn) {
-                downBtn.onclick = function(e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    moveMed(m.id, 1);
-                };
-            }
+            // CRUCIAL : Attacher les événements APRÈS que la carte soit dans le DOM
+            setTimeout(() => {
+                const upButton = document.getElementById('up_' + uniqueIdx);
+                const downButton = document.getElementById('down_' + uniqueIdx);
+                
+                if (upButton) {
+                    upButton.onclick = function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        console.log('UP clicked for:', m.n);
+                        moveMed(m.id, -1);
+                        return false;
+                    };
+                }
+                
+                if (downButton) {
+                    downButton.onclick = function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        console.log('DOWN clicked for:', m.n);
+                        moveMed(m.id, 1);
+                        return false;
+                    };
+                }
+            }, 0);
         });
         
         updateNotifBtn();
