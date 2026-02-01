@@ -685,43 +685,90 @@
             const card = document.createElement('div');
             card.className = `med-card brd-${m.p.toLowerCase()} ${val ? 'completed' : ''}`;
             
-            // CORRECTION : Ne pas utiliser onclick sur la carte
+            // Créer la checkbox
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'chk';
+            checkbox.checked = !!val;
+            checkbox.addEventListener('change', function(e) {
+                e.stopPropagation();
+                const d = k;
+                if(!hist[d]) hist[d] = {};
+                hist[d][m.id] = this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null;
+                localStorage.setItem('hist_v18', JSON.stringify(hist));
+                render();
+            });
+            
+            // Créer la div med-info
+            const medInfo = document.createElement('div');
+            medInfo.className = 'med-info';
+            
+            // Créer la ligne avec le nom et les boutons
+            const nameRow = document.createElement('div');
+            nameRow.className = 'med-name-row';
+            
+            const medName = document.createElement('div');
+            medName.className = 'med-name';
+            medName.textContent = m.n;
+            
+            // Créer les boutons de réorganisation
+            const orderButtons = document.createElement('div');
+            orderButtons.className = 'order-buttons';
+            
+            const upBtn = document.createElement('button');
+            upBtn.className = 'order-btn';
+            upBtn.textContent = '↑';
+            upBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                moveMed(m.id, -1);
+            });
+            
+            const downBtn = document.createElement('button');
+            downBtn.className = 'order-btn';
+            downBtn.textContent = '↓';
+            downBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                moveMed(m.id, 1);
+            });
+            
+            orderButtons.appendChild(upBtn);
+            orderButtons.appendChild(downBtn);
+            
+            nameRow.appendChild(medName);
+            nameRow.appendChild(orderButtons);
+            
+            // Créer la ligne meta
+            const medMeta = document.createElement('div');
+            medMeta.className = 'med-meta';
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.textContent = `${icon} ${m.p} • ${val ? 'Pris à ' + val : 'Prévu à ' + m.t}`;
+            medMeta.appendChild(timeSpan);
+            
+            if (m.p !== 'Crise') {
+                const daysLeft = document.createElement('span');
+                daysLeft.className = 'days-left';
+                daysLeft.textContent = `J-${rem}`;
+                medMeta.appendChild(daysLeft);
+            }
+            
+            medInfo.appendChild(nameRow);
+            medInfo.appendChild(medMeta);
+            
+            // Assembler la carte
+            card.appendChild(checkbox);
+            card.appendChild(medInfo);
+            
+            // Ajouter l'événement click sur la carte
             card.addEventListener('click', function(e) {
                 if(!['BUTTON','INPUT'].includes(e.target.tagName)) {
                     openForm(m.gid);
                 }
             });
             
-            card.innerHTML = `
-                <input type="checkbox" class="chk" ${val?'checked':''} 
-                    onchange="const d='${k}'; if(!hist[d])hist[d]={}; hist[d][${m.id}]=this.checked ? new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : null; localStorage.setItem('hist_v18',JSON.stringify(hist)); render(); event.stopPropagation();">
-                <div class="med-info">
-                    <div class="med-name-row">
-                        <div class="med-name">${m.n}</div>
-                        <div class="order-buttons">
-                            <button class="order-btn" data-id="${m.id}" data-dir="-1">↑</button>
-                            <button class="order-btn" data-id="${m.id}" data-dir="1">↓</button>
-                        </div>
-                    </div>
-                    <div class="med-meta">
-                        <span>${icon} ${m.p} • ${val ? 'Pris à ' + val : 'Prévu à ' + m.t}</span>
-                        ${m.p!=='Crise'?`<span class="days-left">J-${rem}</span>`:''}
-                    </div>
-                </div>
-            `;
-            
             listDiv.appendChild(card);
-        });
-        
-        // CORRECTION : Ajouter les événements après que tout soit dans le DOM
-        document.querySelectorAll('.order-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                const id = parseFloat(this.getAttribute('data-id'));
-                const dir = parseInt(this.getAttribute('data-dir'));
-                moveMed(id, dir);
-            });
         });
         
         updateNotifBtn();
