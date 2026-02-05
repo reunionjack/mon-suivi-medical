@@ -1,52 +1,32 @@
-const CACHE_NAME = 'med-v30'; // Version augmentée pour forcer la mise à jour
-const ASSETS = [
-  './',
-  'index.html',
-  'manifest-v2.json',
-  'Logo3.png',
-  'icon-192.png',
-  'icon-512.png'
-];
-
-// Installation : Mise en cache des nouveaux fichiers
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
-  self.skipWaiting(); // Force le nouveau SW à prendre le contrôle immédiatement
-});
-
-// Activation : NETTOYAGE DES ANCIENS CACHES (Important pour supprimer "Ma Pharmacie")
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) {
-            console.log('Suppression de l ancien cache:', key);
-            return caches.delete(key);
-          }
-        })
-      );
-    })
-  );
-  return self.clients.claim();
-});
-
-// Récupération des fichiers
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then(res => res || fetch(e.request))
-  );
-});
-
-// Gestion des notifications
-self.addEventListener('message', (event) => {
-    if (event.data.type === 'SCHEDULE_NOTIF') {
-        self.registration.showNotification(event.data.title, {\
-            body: event.data.body,\
-            icon: 'icon-192.png',\
-            vibrate: [200, 100, 200]\
-        });
-    }
-});
+diff --git a/sw.js b/sw.js
+index 248bd7809c5fa5870ea14fe69c3590fcc21ad6c8..b13aaafa9873518fe997167b4de939d0171ec9a6 100644
+--- a/sw.js
++++ b/sw.js
+@@ -1,26 +1,26 @@
+-const CACHE_NAME = 'suivi-medical-v32';
++const CACHE_NAME = 'suivi-medical-v33';
+ const ASSETS = [
+   '/',
+   '/index.html',
+   '/manifest.json',
+   '/Logo3.png',
+   '/icon-192.png',
+   '/icon-512.png'
+   // Ajoutez ici tous vos fichiers CSS, JS, images additionnels
+ ];
+ 
+ // Installation : Mise en cache des fichiers
+ self.addEventListener('install', (event) => {
+   console.log('✅ Service Worker: Installation...');
+   event.waitUntil(
+     caches.open(CACHE_NAME)
+       .then(cache => {
+         console.log('📦 Mise en cache des fichiers');
+         return cache.addAll(ASSETS);
+       })
+       .then(() => {
+         console.log('✅ Tous les fichiers mis en cache');
+         return self.skipWaiting();
+       })
+       .catch(err => {
+         console.error('❌ Erreur lors de la mise en cache:', err);
