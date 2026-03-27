@@ -1,32 +1,36 @@
-diff --git a/sw.js b/sw.js
-index 248bd7809c5fa5870ea14fe69c3590fcc21ad6c8..b13aaafa9873518fe997167b4de939d0171ec9a6 100644
---- a/sw.js
-+++ b/sw.js
-@@ -1,26 +1,26 @@
--const CACHE_NAME = 'suivi-medical-v32';
-+const CACHE_NAME = 'suivi-medical-v33';
- const ASSETS = [
-   '/',
-   '/index.html',
-   '/manifest.json',
-   '/Logo3.png',
-   '/icon-192.png',
-   '/icon-512.png'
-   // Ajoutez ici tous vos fichiers CSS, JS, images additionnels
- ];
- 
- // Installation : Mise en cache des fichiers
- self.addEventListener('install', (event) => {
-   console.log('✅ Service Worker: Installation...');
-   event.waitUntil(
-     caches.open(CACHE_NAME)
-       .then(cache => {
-         console.log('📦 Mise en cache des fichiers');
-         return cache.addAll(ASSETS);
-       })
-       .then(() => {
-         console.log('✅ Tous les fichiers mis en cache');
-         return self.skipWaiting();
-       })
-       .catch(err => {
-         console.error('❌ Erreur lors de la mise en cache:', err);
+const CACHE_NAME = 'suivi-medical-v34';
+const ASSETS = [
+  './',
+  'index.html',
+  'manifest.json',
+  'Logo3.png',
+  'icon-192.png',
+  'icon-512.png'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll(ASSETS);
+    }).then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys.filter(key => key !== CACHE_NAME)
+            .map(key => caches.delete(key))
+      );
+    })
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then(response => {
+      return response || fetch(event.request);
+    })
+  );
+});
